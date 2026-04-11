@@ -20,6 +20,9 @@
                     <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                         {{ __('Ruang Admin') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('admin.lapangan.index')" :active="request()->routeIs('admin.lapangan.*')">
+                        {{ __('Kelola Lapangan') }}
+                    </x-nav-link>
                     @endif
                 </div>
 
