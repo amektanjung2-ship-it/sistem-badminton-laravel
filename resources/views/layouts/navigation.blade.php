@@ -23,6 +23,9 @@
                     <x-nav-link :href="route('admin.lapangan.index')" :active="request()->routeIs('admin.lapangan.*')">
                         {{ __('Kelola Lapangan') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('admin.alat.index')" :active="request()->routeIs('admin.alat.*')">
+                        {{ __('Kelola Alat') }}
+                    </x-nav-link>
                     @endif
                 </div>
 

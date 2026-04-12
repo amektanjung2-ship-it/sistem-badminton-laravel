@@ -7,6 +7,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AdminController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\Admin\LapanganController;
+use App\Http\Controllers\Admin\AlatController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,6 +32,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 }); // Route Group Khusus Admin
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
+    // --- ROUTE UNTUK KELOLA ALAT ---
+    Route::get('/alat', [AlatController::class, 'index'])->name('alat.index');
+    Route::get('/alat/tambah', [AlatController::class, 'create'])->name('alat.create');
+    Route::post('/alat/simpan', [AlatController::class, 'store'])->name('alat.store');
+    Route::get('/alat/{alat}/edit', [AlatController::class, 'edit'])->name('alat.edit');
+    Route::put('/alat/{alat}', [AlatController::class, 'update'])->name('alat.update');
+    Route::delete('/alat/{alat}', [AlatController::class, 'destroy'])->name('alat.destroy');
 
     // URL: localhost:8000/admin/dashboard
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
