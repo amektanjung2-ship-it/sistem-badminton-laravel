@@ -84,7 +84,17 @@
                                     @if($booking->status_pembayaran == 'pending')
                                     <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded border border-yellow-300">Menunggu ACC</span>
                                     @elseif($booking->status_pembayaran == 'lunas')
-                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded border border-green-300">Lunas</span>
+                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded border border-green-300 block mb-3 text-center">Lunas</span>
+
+                                    <div class="flex flex-col space-y-2">
+                                        <a href="{{ route('cetak.tiket', $booking->id) }}" target="_blank" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-3 rounded shadow transition text-center">
+                                            🖨️ Cetak Tiket
+                                        </a>
+
+                                        <a href="{{ route('tiket.pdf', $booking->id) }}" class="inline-block bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1.5 px-3 rounded shadow transition text-center">
+                                            📥 Download PDF
+                                        </a>
+                                    </div>
                                     @else
                                     <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded border border-red-300">Batal</span>
                                     @endif

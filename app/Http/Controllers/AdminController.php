@@ -37,4 +37,20 @@ class AdminController extends Controller
         // Kembalikan ke halaman dashboard admin dengan pesan sukses
         return back()->with('success', 'Status pesanan berhasil diperbarui menjadi ' . strtoupper($request->status_pembayaran) . '!');
     }
+    // FUNGSI UNTUK HALAMAN LAPORAN PENDAPATAN
+    public function laporan()
+    {
+        // 1. Tarik semua data pesanan yang statusnya SUDAH LUNAS
+        $bookings = Booking::with(['user', 'lapangan'])
+            ->whereRaw("LOWER(status_pembayaran) = 'lunas'")
+            ->latest()
+            ->get();
+
+        // 2. Mesin Penghitung Kasir (Otomatis menjumlahkan uang)
+        $totalPendapatan = $bookings->sum('total_harga');
+        $totalTransaksi = $bookings->count();
+
+        // 3. Kirim datanya ke halaman view laporan
+        return view('admin.laporan', compact('bookings', 'totalPendapatan', 'totalTransaksi'));
+    }
 }
