@@ -9,9 +9,7 @@ use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\Admin\LapanganController;
 use App\Http\Controllers\Admin\AlatController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::redirect('/', '/login');
 
 // --- RUTE PELANGGAN BIASA ---
 Route::get('/dashboard', [DashboardController::class, 'index'])
