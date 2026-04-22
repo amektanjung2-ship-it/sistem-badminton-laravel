@@ -9,48 +9,77 @@ use App\Models\Alat;
 
 class AdminController extends Controller
 {
-    // 1. Fungsi ini KHUSUS untuk menampilkan halaman Dashboard Admin
-    public function index()
+    // 1. Fungsi Utama Dashboard Admin
+    public function index(Request $request)
     {
-        // Mengambil semua data booking, diurutkan dari yang terbaru
-        $bookings = Booking::with(['user', 'lapangan'])->latest()->get();
+        // A. Fitur Pencarian
+        $search = $request->input('search');
 
+        // B. Query Data Booking (Terintegrasi dengan Search)
+        $bookings = Booking::with(['user', 'lapangan'])
+            ->when($search, function ($query, $search) {
+                return $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhereHas('lapangan', function ($q) use ($search) {
+                    $q->where('nama_lapangan', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->get();
+
+        // C. Statistik Ringkasan
         $total_lapangan = Lapangan::count();
-        $total_alat = Alat::count();
+        $total_alat = Alat::sum('stok');
 
-        return view('admin.dashboard', compact('bookings', 'total_lapangan', 'total_alat'));
+        // D. Logika Grafik (7 Hari Terakhir)
+        $labels = [];
+        $data = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $labels[] = now()->subDays($i)->format('d M');
+
+            $income = Booking::whereDate('created_at', $date)
+                ->whereRaw("LOWER(status_pembayaran) = 'lunas'")
+                ->sum('total_harga');
+            $data[] = $income;
+        }
+
+        // E. KIRIM SEMUA DATA (Hanya satu return di paling bawah)
+        return view('admin.dashboard', compact(
+            'total_lapangan',
+            'total_alat',
+            'bookings',
+            'labels',
+            'data'
+        ));
     }
 
-    // 2. Fungsi ini KHUSUS untuk mengubah status saat tombol diklik
+    // 2. Fungsi Update Status (ACC/Tolak)
     public function updateStatus(Request $request, Booking $booking)
     {
-        // Validasi input agar hanya menerima 3 status ini
         $request->validate([
             'status_pembayaran' => 'required|in:pending,lunas,batal'
         ]);
 
-        // Update status di database
         $booking->update([
             'status_pembayaran' => $request->status_pembayaran
         ]);
 
-        // Kembalikan ke halaman dashboard admin dengan pesan sukses
-        return back()->with('success', 'Status pesanan berhasil diperbarui menjadi ' . strtoupper($request->status_pembayaran) . '!');
+        return back()->with('success', 'Status pesanan berhasil diperbarui!');
     }
-    // FUNGSI UNTUK HALAMAN LAPORAN PENDAPATAN
+
+    // 3. Fungsi Halaman Laporan
     public function laporan()
     {
-        // 1. Tarik semua data pesanan yang statusnya SUDAH LUNAS
         $bookings = Booking::with(['user', 'lapangan'])
             ->whereRaw("LOWER(status_pembayaran) = 'lunas'")
             ->latest()
             ->get();
 
-        // 2. Mesin Penghitung Kasir (Otomatis menjumlahkan uang)
         $totalPendapatan = $bookings->sum('total_harga');
         $totalTransaksi = $bookings->count();
 
-        // 3. Kirim datanya ke halaman view laporan
         return view('admin.laporan', compact('bookings', 'totalPendapatan', 'totalTransaksi'));
     }
 }
