@@ -1,59 +1,94 @@
 # 🏸 E-Badminton: Smart Arena Management System
 
-![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel)
-![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?style=for-the-badge&logo=php)
-![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.0-38B2AC?style=for-the-badge&logo=tailwind-css)
-![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
+Selamat datang di *repository* resmi proyek **E-Badminton**. 👋
 
-E-Badminton adalah platform digital mutakhir yang dirancang untuk merevolusi manajemen operasional lapangan badminton. [cite_start]Dikembangkan oleh mahasiswa **Sistem Informasi**, proyek ini mengintegrasikan pemrosesan data real-time dengan visualisasi analitik untuk mendukung pengambilan keputusan bisnis yang lebih akurat[cite: 16].
+**E-Badminton** adalah platform berbasis web yang kami bangun untuk mendigitalisasi proses penyewaan lapangan bulu tangkis. Kami membuat sistem ini karena melihat masih banyak pengelola lapangan yang kewalahan mencatat jadwal di buku tulis, yang sering mengakibatkan jadwal bentrok (*double booking*) dan laporan keuangan yang berantakan.
 
----
-
-## 🚀 Mengapa E-Badminton?
-[cite_start]Sistem ini hadir untuk menyelesaikan masalah operasional yang sering terjadi di lapangan olahraga tradisional[cite: 5, 8]:
-- **Double Booking:** Algoritma validasi jadwal memastikan tidak ada jadwal bentrok.
-- **Transparansi Keuangan:** Dashboard admin dengan grafik tren pendapatan harian.
-- **Efisiensi Inventaris:** Pelacakan stok alat olahraga (raket, kok) yang terintegrasi dengan pemesanan.
+Dengan E-Badminton, mulai dari pemesanan jadwal, kelola stok alat, hingga rekap pendapatan bulanan, semuanya jadi serba otomatis dan mudah dipantau! 🚀
 
 ---
 
-## 👨‍💻 Tim Pengembang (Kelompok UTS)
-[cite_start]Kami adalah tim beranggotakan 4 orang yang berkolaborasi penuh pada pengembangan perangkat lunak dan penyusunan dokumentasi sistem[cite: 16].
-
-| Peran | Nama & NIM | Tugas Utama |
-| :---: | :--- | :--- |
-| 🛡️ | **Rahmat Tanjung** <br> `[2330407021]` | **Lead & Fullstack Developer** (Arsitektur Sistem & Logika Bisnis) |
-| 🗄️ | **Andre** <br> `[2330407004]` | **Backend & Database Engineer** (Struktur ERD & Database MySQL) |
-| 🎨 | **Hafis** <br> `[NIM Hafis]` | **Frontend & UI/UX Designer** (Slicing UI & Tailwind CSS) |
-| 📝 | **Sindi** <br> `[2330407030]` | **QA & Technical Writer** (Dokumentasi SRS & Pengetesan Fitur) |
+## 📑 Daftar Isi
+1. [Kenalan Sama Tim Kita](#-kenalan-sama-tim-kita)
+2. [Hak Akses & Fitur Utama](#-hak-akses--fitur-utama)
+3. [Alat Tempur (Teknologi)](#-alat-tempur-teknologi)
+4. [Cara Install di Laptop Kamu](#-cara-install-di-laptop-kamu)
+5. [Tangkapan Layar (Screenshot)](#-tangkapan-layar-screenshot)
+6. [Progres Pengembangan](#-progres-pengembangan)
 
 ---
 
-## 🛠️ Fitur Utama
-[cite_start]Aplikasi ini memiliki minimal 3 fitur utama yang sudah berjalan sesuai kriteria demo UTS[cite: 14, 16]:
-1. **Advanced Admin Dashboard:** Visualisasi tren pendapatan menggunakan Chart.js.
-2. **Intelligent Booking System:** Manajemen jadwal penyewaan lapangan secara dinamis.
-3. **Master Data Management:** Pengelolaan data lapangan, alat, dan harga sewa (CRUD).
+## 👨‍💻 Kenalan Sama Tim Kita
+
+Proyek ini adalah hasil kolaborasi 4 mahasiswa Sistem Informasi. Berikut adalah tim di balik pengembangan E-Badminton:
+
+| Nama & NIM | Spesialisasi & Peran Utama |
+| :--- | :--- |
+| **Rahmat Tanjung** <br> `[2330407021]` | **Fullstack Developer** <br> Mengatur arsitektur sistem, *routing* Laravel, dan meracik logika grafik Chart.js di Dashboard. |
+| **Andre** <br> `[2330407004]` | **Database Engineer** <br> Merancang ERD, membuat tabel (*migrations*), dan mengatur relasi antar data di MySQL. |
+| **Hafis** <br> `[Isi NIM Hafis]` | **UI/UX & Frontend** <br> Mendesain alur pengguna dan menyulap kodingan *layout* jadi ciamik pakai Tailwind CSS. |
+| **Sindi** <br> `[2330407030]` | **QA & Tech Writer** <br> Menguji fitur agar bebas *bug* dan menyusun Dokumen SRS (Software Requirements Specification). |
 
 ---
 
-## 💻 Panduan Instalasi Lokal
-[cite_start]Berikut adalah cara menjalankan proyek ini di lingkungan pengembangan lokal[cite: 16]:
+## ✨ Hak Akses & Fitur Utama
 
-1. **Clone Repository:** `git clone [https://github.com/amektanjung2-ship-it/sistem-badminton-laravel]`
-2. **Install Library:** `composer install` dan `npm install`
-3. **Setup Env:** Copy `.env.example` ke `.env` lalu `php artisan key:generate`
-4. **Database:** Buat database `sistem-badminton` lalu `php artisan migrate --seed`
-5. **Run:** `npm run dev` dan akses via `http://sistem-badminton.test` (Laravel Herd)
+[cite_start]Sistem ini dirancang untuk 2 jenis pengguna (Aktor) dengan fitur yang berjalan lancar tanpa *error* kritis[cite: 14]:
 
----
+### 👑 1. Admin (Pemilik/Pengelola Lapangan)
+* **Dashboard Pintar:** Visualisasi tren pendapatan 7 hari terakhir dengan grafik interaktif (Chart.js).
+* **Manajemen Lapangan:** Operasi CRUD (Create, Read, Update, Delete) data lapangan (VIP/Reguler) dan tarif sewa.
+* **Manajemen Inventaris:** Pengaturan sewa alat ekstra seperti raket, sepatu, dan kok.
+* **Validasi Booking:** Konfirmasi pesanan masuk untuk mencegah jadwal tumpang tindih.
 
-## 📈 Status Pengembangan (Update: 26 April 2026)
-- [x] [cite_start]**Milestone 1:** Desain Database & ERD (100%) [cite: 16]
-- [x] **Milestone 2:** Setup Dashboard & Grafik Pendapatan (100%)
-- [x] **Milestone 3:** Fitur CRUD Data Master (100%)
-- [ ] **Milestone 4:** Integrasi Notifikasi WA (Planned)
+### 🏸 2. Pelanggan (Penyewa)
+* **Cek Ketersediaan:** Melihat jadwal lapangan kosong secara *real-time*.
+* **Sistem Booking:** Memesan lapangan dan alat tambahan secara mandiri.
 
 ---
 
-> [cite_start]**Catatan:** Repository ini dikelola untuk memenuhi tugas UTS Proyek Sistem Informasi (Senin, 27 April 2026)[cite: 1, 16].
+## 🛠️ Alat Tempur (Teknologi)
+
+* **Backend:** Laravel 11 (PHP 8.3)
+* **Frontend:** Blade Templating, Tailwind CSS 3, Vite
+* **Database:** MySQL
+* **Library:** Chart.js (Visualisasi Data)
+
+---
+
+## 💻 Cara Install di Laptop Kamu
+
+Ikuti panduan *step-by-step* berikut untuk menjalankan proyek secara lokal:
+
+### 1. Persiapan Awal
+Kloning repositori dan masuk ke folder proyek:
+```bash
+git clone [Link-Repo-GitHub-Kalian]
+cd sistem-badminton
+
+### 2.Instalasi Dependecies 
+Instal paket-paket PHP dan JavaScript yang diperlukan:
+composer install
+npm install
+
+### 3.Konfigurasi Environment
+Salin file konfigurasi dan buat kunci aplikasi:
+
+Salin file: cp .env.example .env
+
+Generate Key: php artisan key:generate
+
+Buka file .env dan pastikan nama database sesuai: DB_DATABASE=sistem-badminton
+
+### 4.Setup Database
+Buat database baru bernama sistem-badminton di phpMyAdmin, lalu jalankan migrasi:
+php artisan migrate --seed
+
+### 5. Menjalankan Aplikasi
+Nyalakan compiler desain dan server:
+
+Terminal 1: npm run dev
+
+Opsi A (Laravel Herd): Akses langsung via http://sistem-badminton.test
+
+Opsi B (Manual): Buka Terminal 2, ketik php artisan serve, lalu buka http://127.0.0.1:8000
