@@ -9,14 +9,27 @@
                 <label class="block text-gray-700 font-bold mb-2">Nama Perlengkapan</label>
                 <input type="text" name="nama_alat" class="w-full border-gray-300 rounded-md" required>
             </div>
+            
             <div class="mb-4">
-                <label class="block text-gray-700 font-bold mb-2">Harga Sewa (Rp)</label>
+                <label class="block text-gray-700 font-bold mb-2">Harga Sewa / Beli (Rp)</label>
                 <input type="number" name="harga_sewa" class="w-full border-gray-300 rounded-md" required>
             </div>
-            <div class="mb-6">
+            
+            <div class="mb-4">
                 <label class="block text-gray-700 font-bold mb-2">Jumlah Stok</label>
                 <input type="number" name="stok" class="w-full border-gray-300 rounded-md" required>
             </div>
+
+            {{-- INI TAMBAHAN DROPDOWN JENIS TRANSAKSI --}}
+            <div class="mb-6">
+                <label class="block text-gray-700 font-bold mb-2">Jenis Transaksi</label>
+                <select name="jenis_transaksi" class="w-full border-gray-300 rounded-md" required>
+                    <option value="Sewa">Sewa (Barang dikembalikan, contoh: Raket, Sepatu)</option>
+                    <option value="Beli">Beli (Barang habis pakai, contoh: Kok, Air Minum)</option>
+                </select>
+            </div>
+            {{-- =================================== --}}
+
             <div class="flex justify-end pt-4 border-t">
                 <a href="{{ route('admin.alat.index') }}" class="bg-gray-500 text-white py-2 px-4 rounded mr-2">Batal</a>
                 <button type="submit" class="bg-blue-600 text-white py-2 px-6 rounded">Simpan Data</button>

@@ -6,5 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Alat extends Model
 {
-    protected $fillable = ['nama_alat', 'harga_sewa', 'stok'];
+    protected $fillable = ['nama_alat', 
+        'stok', 
+        'harga_sewa', 
+        'jenis_transaksi'];
 }

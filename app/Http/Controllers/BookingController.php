@@ -43,8 +43,40 @@ class BookingController extends Controller
         if ($bentrok) {
             return back()->with('error', 'Maaf! Lapangan ini sudah dipesan pada jam tersebut. Silakan pilih jam lain.');
         }
+        // 4. LOGIKA BARU: VALIDASI STOK ALAT (SEWA vs BELI)
+        if ($request->has('alat')) {
+            foreach ($request->alat as $alat_id => $jumlah) {
+                if ($jumlah > 0) {
+                    $alat = Alat::find($alat_id);
 
-        // 4. HITUNG HARGA
+                    // JIKA BARANG SEWA (Contoh: Raket, Sepatu)
+                    if ($alat->jenis_transaksi == 'Sewa') {
+                        // Hitung berapa alat yang sedang dipakai orang lain di waktu yang sama
+                        $terpakai = BookingAlat::join('bookings', 'booking_alats.booking_id', '=', 'bookings.id')
+                            ->where('booking_alats.alat_id', $alat_id)
+                            ->where('bookings.tanggal_main', $request->tanggal_main) // Hari yang sama
+                            ->where('bookings.jam_mulai', '<', $jam_selesai) // Irisan waktu mulai
+                            ->where('bookings.jam_selesai', '>', $jam_mulai) // Irisan waktu selesai
+                            ->where('bookings.status_pembayaran', '!=', 'batal') // Abaikan pesanan batal
+                            ->sum('booking_alats.jumlah');
+
+                        $sisa_stok = $alat->stok - $terpakai;
+
+                        if ($jumlah > $sisa_stok) {
+                            return back()->with('error', "Maaf, sisa {$alat->nama_barang} di jam tersebut hanya tinggal {$sisa_stok}.");
+                        }
+                    }
+                    // JIKA BARANG BELI (Contoh: Kok, Air Minum)
+                    else {
+                        if ($jumlah > $alat->stok) {
+                            return back()->with('error', "Maaf, fisik stok {$alat->nama_barang} tidak mencukupi. Sisa: {$alat->stok}");
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. HITUNG HARGA
         $total_harga_lapangan = $lapangan->harga_per_jam * $request->durasi;
         $total_harga_alat = 0;
 
@@ -59,7 +91,7 @@ class BookingController extends Controller
 
         $total_keseluruhan = $total_harga_lapangan + $total_harga_alat;
 
-        // 5. SIMPAN KE TABEL BOOKINGS
+        // 6. SIMPAN KE TABEL BOOKINGS
         $booking = Booking::create([
             'user_id' => auth::id(),
             'lapangan_id' => $lapangan->id,
@@ -70,7 +102,7 @@ class BookingController extends Controller
             'status_pembayaran' => 'pending'
         ]);
 
-        // 6. SIMPAN KE TABEL BOOKING_ALATS & KURANGI STOK
+        // 7. SIMPAN KE TABEL BOOKING_ALATS & KURANGI STOK
         if ($request->has('alat')) {
             foreach ($request->alat as $alat_id => $jumlah) {
                 if ($jumlah > 0) {
@@ -83,7 +115,9 @@ class BookingController extends Controller
                         'subtotal' => $alat->harga_sewa * $jumlah
                     ]);
 
-                    $alat->decrement('stok', $jumlah);
+                    if ($alat->jenis_transaksi == 'Beli') {
+                        $alat->decrement('stok', $jumlah);
+                    }
                 }
             }
         }

@@ -26,7 +26,7 @@ Proyek ini adalah hasil kolaborasi 4 mahasiswa Sistem Informasi. Berikut adalah 
 | :--- | :--- |
 | **Rahmat Tanjung** <br> `[2330407021]` | **Fullstack Developer** <br> Mengatur arsitektur sistem, *routing* Laravel, dan meracik logika grafik Chart.js di Dashboard. |
 | **Andre** <br> `[2330407004]` | **Database Engineer** <br> Merancang ERD, membuat tabel (*migrations*), dan mengatur relasi antar data di MySQL. |
-| **Hafis** <br> `[Isi NIM Hafis]` | **UI/UX & Frontend** <br> Mendesain alur pengguna dan menyulap kodingan *layout* jadi ciamik pakai Tailwind CSS. |
+| **Hafis** <br> `[2430407057]` | **UI/UX & Frontend** <br> Mendesain alur pengguna dan menyulap kodingan *layout* jadi ciamik pakai Tailwind CSS. |
 | **Sindi** <br> `[2330407030]` | **QA & Tech Writer** <br> Menguji fitur agar bebas *bug* dan menyusun Dokumen SRS (Software Requirements Specification). |
 
 ---
