@@ -125,4 +125,33 @@ class BookingController extends Controller
         // 7. KEMBALI KE DASHBOARD DENGAN PESAN SUKSES
         return redirect()->route('dashboard')->with('success', 'Booking berhasil dibuat! Total tagihan Anda: Rp ' . number_format($total_keseluruhan, 0, ',', '.'));
     }
+    // Fungsi baru khusus untuk membalas pertanyaan JavaScript (Kalender)
+    public function cekJadwal(Request $request, Lapangan $lapangan)
+    {
+        $tanggal = $request->query('tanggal');
+
+        // Cari pesanan di lapangan dan tanggal tersebut yang tidak batal
+        $bookings = Booking::where('lapangan_id', $lapangan->id)
+            ->where('tanggal_main', $tanggal)
+            ->where('status_pembayaran', '!=', 'batal')
+            ->get(['jam_mulai', 'jam_selesai']);
+
+        $jam_terpakai = [];
+
+        foreach ($bookings as $booking) {
+            // Ambil angka jamnya saja (contoh: 08:00 jadi 8)
+            $start = (int) date('H', strtotime($booking->jam_mulai));
+            $end = (int) date('H', strtotime($booking->jam_selesai));
+
+            // Masukkan jam yang terpakai ke dalam array
+            for ($i = $start; $i < $end; $i++) {
+                $jam_terpakai[] = $i;
+            }
+        }
+
+        // Kirim balasannya dalam format JSON
+        return response()->json([
+            'terpakai' => $jam_terpakai
+        ]);
+    }
 }
