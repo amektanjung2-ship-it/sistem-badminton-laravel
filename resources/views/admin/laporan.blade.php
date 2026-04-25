@@ -23,10 +23,13 @@
                         <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition w-full sm:w-auto">
                             🔍 Filter
                         </button>
+                        <a href="{{ route('admin.laporan.pdf', request()->query()) }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition text-center">
+                            📄 Ekspor PDF
+                        </a>
                         @if($start_date || $end_date)
-                            <a href="{{ route('admin.laporan') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-6 rounded-lg shadow transition w-full sm:w-auto text-center">
-                                Reset
-                            </a>
+                        <a href="{{ route('admin.laporan') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-6 rounded-lg shadow transition w-full sm:w-auto text-center">
+                            Reset
+                        </a>
                         @endif
                     </div>
                 </form>
@@ -36,7 +39,10 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden">
                     <div class="absolute right-0 top-0 opacity-20 transform translate-x-4 -translate-y-4">
-                        <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path></svg>
+                        <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
+                            <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path>
+                        </svg>
                     </div>
                     <h4 class="text-emerald-100 font-medium text-lg mb-1 relative z-10">Total Pendapatan Bersih</h4>
                     <h2 class="text-3xl font-extrabold relative z-10">Rp {{ number_format($total_keseluruhan, 0, ',', '.') }}</h2>

@@ -41,6 +41,7 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     Route::get('/alat/{alat}/edit', [AlatController::class, 'edit'])->name('alat.edit');
     Route::put('/alat/{alat}', [AlatController::class, 'update'])->name('alat.update');
     Route::delete('/alat/{alat}', [AlatController::class, 'destroy'])->name('alat.destroy');
+    Route::get('/laporan/pdf', [AdminController::class, 'downloadLaporanPDF'])->name('laporan.pdf');
 
     // Dashboard Admin
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
