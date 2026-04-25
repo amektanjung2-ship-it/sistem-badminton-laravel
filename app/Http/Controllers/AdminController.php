@@ -69,17 +69,43 @@ class AdminController extends Controller
         return back()->with('success', 'Status pesanan berhasil diperbarui!');
     }
 
-    // 3. Fungsi Halaman Laporan
-    public function laporan()
+   // 3. Fungsi Halaman Laporan Keuangan (Canggih)
+    public function laporan(Request $request)
     {
-        $bookings = Booking::with(['user', 'lapangan'])
-            ->whereRaw("LOWER(status_pembayaran) = 'lunas'")
-            ->latest()
-            ->get();
+        // A. Tangkap inputan tanggal dari form filter
+        $start_date = $request->input('start_date');
+        $end_date = $request->input('end_date');
 
-        $totalPendapatan = $bookings->sum('total_harga');
-        $totalTransaksi = $bookings->count();
+        // B. Buat Query Dasar (Hanya ambil pesanan yang LUNAS)
+        $query = Booking::with(['user', 'lapangan'])->whereRaw("LOWER(status_pembayaran) = 'lunas'");
 
-        return view('admin.laporan', compact('bookings', 'totalPendapatan', 'totalTransaksi'));
+        // C. Jika Admin mengisi filter tanggal, terapkan filter tersebut
+        if ($start_date && $end_date) {
+            $query->whereBetween('tanggal_main', [$start_date, $end_date]);
+        }
+
+        // Eksekusi pencarian data
+        $bookings = $query->latest()->get();
+
+        // D. Hitung Keuangan (Pisahkan Lapangan & Alat)
+        $total_keseluruhan = $bookings->sum('total_harga');
+        
+        // Ambil semua ID booking yang sudah terfilter untuk mencari alatnya
+        $booking_ids = $bookings->pluck('id');
+        
+        // Ambil total uang khusus dari penyewaan/pembelian alat
+        $total_alat = \App\Models\BookingAlat::whereIn('booking_id', $booking_ids)->sum('subtotal');
+        
+        // Total uang murni dari lapangan = Total Keseluruhan dikurangi Total Alat
+        $total_lapangan = $total_keseluruhan - $total_alat;
+
+        return view('admin.laporan', compact(
+            'bookings', 
+            'total_keseluruhan', 
+            'total_lapangan', 
+            'total_alat', 
+            'start_date', 
+            'end_date'
+        ));
     }
 }
