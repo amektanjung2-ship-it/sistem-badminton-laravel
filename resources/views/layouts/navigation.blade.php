@@ -24,7 +24,7 @@
                         {{ __('Kelola Lapangan') }}
                     </x-nav-link>
                     <x-nav-link :href="route('admin.alat.index')" :active="request()->routeIs('admin.alat.*')">
-                        {{ __('Kelola Alat') }}
+                        {{ __('Kelola Sewa/jual ') }}
                     </x-nav-link>
                     @endif
                 </div>

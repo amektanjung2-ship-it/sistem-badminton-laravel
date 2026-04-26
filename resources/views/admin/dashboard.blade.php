@@ -8,7 +8,7 @@
             </h2>
 
             <a href="{{ route('admin.laporan') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded shadow transition">
-                📊 Lihat Laporan Pendapatan
+                 Lihat Laporan Pendapatan
             </a>
         </div>
     </x-slot>
@@ -65,7 +65,7 @@
         <div class="p-6 text-gray-900">
 
             <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                <h3 class="text-lg font-bold border-b-2 border-blue-500 pb-1 inline-block">📋 Daftar Pesanan Masuk</h3>
+                <h3 class="text-lg font-bold border-b-2 border-blue-500 pb-1 inline-block"> Daftar Pesanan Masuk</h3>
 
                 <form action="{{ route('admin.dashboard') }}" method="GET" class="flex w-full md:w-auto">
                     <input type="text" name="search" value="{{ request('search') }}"

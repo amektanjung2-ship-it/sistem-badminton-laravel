@@ -18,7 +18,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">No</th>
-                                <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">Nama Alat</th>
+                                <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">Nama Barang</th>
                                 <th class="py-3 px-4 border-b text-left text-sm font-semibold text-gray-600">Harga Sewa</th>
                                 <th class="py-3 px-4 border-b text-center text-sm font-semibold text-gray-600">Stok</th>
                                 <th class="py-3 px-4 border-b text-center text-sm font-semibold text-gray-600">Aksi</th>
