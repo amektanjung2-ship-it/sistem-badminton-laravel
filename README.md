@@ -56,7 +56,7 @@ Ikuti langkah berikut untuk menjalankan project di lokal:
 git clone https://github.com/amektanjung2-ship-it/sistem-badminton-laravel.git 
 
 cd sistem-badminton
-```
+``` 
 
 ---
 

@@ -6,7 +6,7 @@
         <form action="{{ route('admin.alat.store') }}" method="POST">
             @csrf
             <div class="mb-4">
-                <label class="block text-gray-700 font-bold mb-2">Nama Perlengkapan</label>
+                <label class="block text-gray-700 font-bold mb-2">Nama Barang</label>
                 <input type="text" name="nama_alat" class="w-full border-gray-300 rounded-md" required>
             </div>
             
@@ -24,8 +24,8 @@
             <div class="mb-6">
                 <label class="block text-gray-700 font-bold mb-2">Jenis Transaksi</label>
                 <select name="jenis_transaksi" class="w-full border-gray-300 rounded-md" required>
-                    <option value="Sewa">Sewa (Barang dikembalikan, contoh: Raket, Sepatu)</option>
-                    <option value="Beli">Beli (Barang habis pakai, contoh: Kok, Air Minum)</option>
+                    <option value="Sewa">Sewa (Barang sewaan)</option>
+                    <option value="Beli">Beli (Barang jual Beli)</option>
                 </select>
             </div>
             {{-- =================================== --}}

@@ -22,7 +22,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {{-- KIRI: TANGGAL & JAM --}}
                         <div>
-                            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">1. Pilih Waktu Bermain</h3>
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">. Pilih Waktu Bermain</h3>
                             
                             <div class="mb-4">
                                 <label class="block text-gray-700 font-bold mb-2">Tanggal Main</label>
@@ -46,7 +46,7 @@
 
                         {{-- KANAN: KALENDER INTERAKTIF --}}
                         <div>
-                            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">2. Cek Ketersediaan</h3>
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">. Cek Ketersediaan</h3>
                             <p class="text-xs text-gray-500 mb-3">*Kotak <span class="text-red-500 font-bold">merah</span> berarti sudah dipesan orang lain.</p>
                             
                             <div id="gridKalender" class="grid grid-cols-4 gap-2">

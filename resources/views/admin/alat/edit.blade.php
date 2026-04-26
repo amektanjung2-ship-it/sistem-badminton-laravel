@@ -6,11 +6,11 @@
         <form action="{{ route('admin.alat.update', $alat->id) }}" method="POST">
             @csrf @method('PUT')
             <div class="mb-4">
-                <label class="block text-gray-700 font-bold mb-2">Nama Perlengkapan</label>
+                <label class="block text-gray-700 font-bold mb-2">Nama barang</label>
                 <input type="text" name="nama_alat" value="{{ $alat->nama_alat }}" class="w-full border-gray-300 rounded-md" required>
             </div>
             <div class="mb-4">
-                <label class="block text-gray-700 font-bold mb-2">Harga Sewa (Rp)</label>
+                <label class="block text-gray-700 font-bold mb-2">Harga Sewa/jual beli (Rp)</label>
                 <input type="number" name="harga_sewa" value="{{ $alat->harga_sewa }}" class="w-full border-gray-300 rounded-md" required>
             </div>
             <div class="mb-6">
