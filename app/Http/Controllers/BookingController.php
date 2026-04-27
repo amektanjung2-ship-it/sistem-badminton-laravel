@@ -85,6 +85,17 @@ class BookingController extends Controller
                 if ($jumlah > 0) {
                     $alat = Alat::find($alat_id);
                     $total_harga_alat += ($alat->harga_sewa * $jumlah);
+                    // ... kodingan hitung total harga lapangan kamu yang sudah ada ...
+
+                    // 👇 LOGIKA DISKON MEMBER 👇
+                    $diskon = 0;
+                    // Cek apakah user yang login punya status is_member = 1
+                    if ($request->user()->is_member) {
+                        $diskon = $total_harga * 0.10; // Diskon 10%
+                        $total_harga = $total_harga - $diskon;
+                    }
+
+                    // ... kodingan kamu selanjutnya yang menyimpan data ke database (Booking::create) ...
                 }
             }
         }

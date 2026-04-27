@@ -139,4 +139,26 @@ class AdminController extends Controller
 
         return $pdf->download('Laporan-Keuangan-GOR.pdf');
     }
+    // Fungsi untuk mengubah status Member (On/Off)
+    public function toggleMember($id)
+    {
+        // Cari user berdasarkan ID
+        $user = \App\Models\User::findOrFail($id);
+
+        // Ubah statusnya jadi kebalikannya (Kalau 0 jadi 1, kalau 1 jadi 0)
+        $user->is_member = !$user->is_member;
+        $user->save();
+
+        // Kembalikan ke halaman sebelumnya dengan pesan sukses
+        $status = $user->is_member ? 'dijadikan Member' : 'dicabut status Membernya';
+        return back()->with('success', "Akun {$user->name} berhasil {$status}!");
+    }
+    // Fungsi untuk menampilkan halaman Daftar Pelanggan
+    public function daftarPelanggan()
+    {
+        // Ambil semua data user dari database (diurutkan dari yang terbaru)
+        $users = \App\Models\User::latest()->get();
+
+        return view('admin.pelanggan', compact('users'));
+    }
 }
