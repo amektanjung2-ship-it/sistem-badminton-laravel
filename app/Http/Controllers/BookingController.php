@@ -21,20 +21,22 @@ class BookingController extends Controller
     // Memproses data yang dikirim dari form
     public function store(Request $request, Lapangan $lapangan)
     {
-        // 1. Validasi Input
+        // 1. Validasi Input (Durasi sekarang bisa desimal, misal: 1.5 untuk 1,5 jam)
         $request->validate([
             'tanggal_main' => 'required|date',
             'jam_mulai' => 'required',
-            'durasi' => 'required|integer|min:1'
+            'durasi' => 'required|numeric|min:0.5' // Minimal sewa 30 menit
         ]);
 
-        // 2. Hitung Jam Selesai secara otomatis
+        // 2. Hitung Jam Selesai secara otomatis (AKURAT BERDASARKAN MENIT)
         $jam_mulai = $request->jam_mulai;
-        $jam_selesai = date('H:i', strtotime($jam_mulai . " + {$request->durasi} hours"));
+        $menit = $request->durasi * 60; // Ubah durasi ke menit
+        $jam_selesai = date('H:i', strtotime($jam_mulai . " + {$menit} minutes"));
 
         // 3. LOGIKA ANTI BENTROK
         $bentrok = Booking::where('lapangan_id', $lapangan->id)
             ->where('tanggal_main', $request->tanggal_main)
+            ->where('status_pembayaran', '!=', 'batal') // Pastikan status batal tidak dihitung
             ->where(function ($query) use ($jam_mulai, $jam_selesai) {
                 $query->where('jam_mulai', '<', $jam_selesai)
                     ->where('jam_selesai', '>', $jam_mulai);
@@ -43,7 +45,8 @@ class BookingController extends Controller
         if ($bentrok) {
             return back()->with('error', 'Maaf! Lapangan ini sudah dipesan pada jam tersebut. Silakan pilih jam lain.');
         }
-        // 4. LOGIKA BARU: VALIDASI STOK ALAT (SEWA vs BELI)
+
+        // 4. LOGIKA VALIDASI STOK ALAT
         if ($request->has('alat')) {
             foreach ($request->alat as $alat_id => $jumlah) {
                 if ($jumlah > 0) {
@@ -51,13 +54,12 @@ class BookingController extends Controller
 
                     // JIKA BARANG SEWA (Contoh: Raket, Sepatu)
                     if ($alat->jenis_transaksi == 'Sewa') {
-                        // Hitung berapa alat yang sedang dipakai orang lain di waktu yang sama
                         $terpakai = BookingAlat::join('bookings', 'booking_alats.booking_id', '=', 'bookings.id')
                             ->where('booking_alats.alat_id', $alat_id)
-                            ->where('bookings.tanggal_main', $request->tanggal_main) // Hari yang sama
-                            ->where('bookings.jam_mulai', '<', $jam_selesai) // Irisan waktu mulai
-                            ->where('bookings.jam_selesai', '>', $jam_mulai) // Irisan waktu selesai
-                            ->where('bookings.status_pembayaran', '!=', 'batal') // Abaikan pesanan batal
+                            ->where('bookings.tanggal_main', $request->tanggal_main)
+                            ->where('bookings.jam_mulai', '<', $jam_selesai)
+                            ->where('bookings.jam_selesai', '>', $jam_mulai)
+                            ->where('bookings.status_pembayaran', '!=', 'batal')
                             ->sum('booking_alats.jumlah');
 
                         $sisa_stok = $alat->stok - $terpakai;
@@ -76,7 +78,7 @@ class BookingController extends Controller
             }
         }
 
-        // 5. HITUNG HARGA
+        // 5. HITUNG HARGA (Akurat sesuai durasi)
         $total_harga_lapangan = $lapangan->harga_per_jam * $request->durasi;
         $total_harga_alat = 0;
 
@@ -85,26 +87,22 @@ class BookingController extends Controller
                 if ($jumlah > 0) {
                     $alat = Alat::find($alat_id);
                     $total_harga_alat += ($alat->harga_sewa * $jumlah);
-                    // ... kodingan hitung total harga lapangan kamu yang sudah ada ...
-
-                    // 👇 LOGIKA DISKON MEMBER 👇
-                    $diskon = 0;
-                    // Cek apakah user yang login punya status is_member = 1
-                    if ($request->user()->is_member) {
-                        $diskon = $total_harga * 0.10; // Diskon 10%
-                        $total_harga = $total_harga - $diskon;
-                    }
-
-                    // ... kodingan kamu selanjutnya yang menyimpan data ke database (Booking::create) ...
                 }
             }
         }
 
+        // Gabungkan total harga
         $total_keseluruhan = $total_harga_lapangan + $total_harga_alat;
+
+        // 👇 LOGIKA DISKON MEMBER (Diperbaiki: Ditaruh di luar looping alat) 👇
+        if ($request->user()->is_member) {
+            $diskon = $total_keseluruhan * 0.10; // Diskon 10%
+            $total_keseluruhan = $total_keseluruhan - $diskon;
+        }
 
         // 6. SIMPAN KE TABEL BOOKINGS
         $booking = Booking::create([
-            'user_id' => auth::id(),
+            'user_id' => Auth::id(),
             'lapangan_id' => $lapangan->id,
             'tanggal_main' => $request->tanggal_main,
             'jam_mulai' => $jam_mulai,
@@ -133,10 +131,11 @@ class BookingController extends Controller
             }
         }
 
-        // 7. KEMBALI KE DASHBOARD DENGAN PESAN SUKSES
+        // 8. KEMBALI KE DASHBOARD DENGAN PESAN SUKSES
         return redirect()->route('dashboard')->with('success', 'Booking berhasil dibuat! Total tagihan Anda: Rp ' . number_format($total_keseluruhan, 0, ',', '.'));
     }
-    // Fungsi baru khusus untuk membalas pertanyaan JavaScript (Kalender)
+
+    // Fungsi baru untuk API JavaScript (Kalender Presisi!)
     public function cekJadwal(Request $request, Lapangan $lapangan)
     {
         $tanggal = $request->query('tanggal');
@@ -147,22 +146,20 @@ class BookingController extends Controller
             ->where('status_pembayaran', '!=', 'batal')
             ->get(['jam_mulai', 'jam_selesai']);
 
-        $jam_terpakai = [];
+        $jadwal_terpakai = [];
 
         foreach ($bookings as $booking) {
-            // Ambil angka jamnya saja (contoh: 08:00 jadi 8)
-            $start = (int) date('H', strtotime($booking->jam_mulai));
-            $end = (int) date('H', strtotime($booking->jam_selesai));
-
-            // Masukkan jam yang terpakai ke dalam array
-            for ($i = $start; $i < $end; $i++) {
-                $jam_terpakai[] = $i;
-            }
+            // Sekarang kita kembalikan waktu pasti (contoh: start: 08:15:00, end: 09:45:00)
+            // Bukan lagi angka integer yang buta huruf!
+            $jadwal_terpakai[] = [
+                'start' => $booking->jam_mulai,
+                'end' => $booking->jam_selesai
+            ];
         }
 
         // Kirim balasannya dalam format JSON
         return response()->json([
-            'terpakai' => $jam_terpakai
+            'terpakai' => $jadwal_terpakai
         ]);
     }
 }

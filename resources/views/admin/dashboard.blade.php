@@ -4,7 +4,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Ruang Kendali Admin') }}
+                {{ __('Ruang Kendali Admin ') }}
             </h2>
 
             <a href="{{ route('admin.laporan') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded shadow transition">
