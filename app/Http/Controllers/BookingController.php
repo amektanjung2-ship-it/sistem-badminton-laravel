@@ -21,12 +21,22 @@ class BookingController extends Controller
     // Memproses data yang dikirim dari form
     public function store(Request $request, Lapangan $lapangan)
     {
-        // 1. Validasi Input (Durasi sekarang bisa desimal, misal: 1.5 untuk 1,5 jam)
+        // 1. Validasi Input (Durasi sekarang bisa desimal)
         $request->validate([
-            'tanggal_main' => 'required|date',
+            // 🛡️ PERUBAHAN 1: Tambah 'after_or_equal:today' agar tidak bisa pilih hari kemarin
+            'tanggal_main' => 'required|date|after_or_equal:today', 
             'jam_mulai' => 'required',
-            'durasi' => 'required|numeric|min:0.5' // Minimal sewa 30 menit
+            'durasi' => 'required|numeric|min:0.5' 
+        ], [
+            // Pesan error khusus agar lebih ramah dibaca
+            'tanggal_main.after_or_equal' => 'Maaf, Anda tidak bisa memesan lapangan untuk hari yang sudah lewat!'
         ]);
+
+        // 🛡️ PERUBAHAN 2: Validasi Jam Operasional Jalur Belakang (Anti Hacker/Inspect Element)
+        $jam_cek = (int) date('H', strtotime($request->jam_mulai));
+        if ($jam_cek < 8 || $jam_cek >= 23) {
+            return back()->with('error', 'Manipulasi waktu terdeteksi! GOR hanya beroperasi antara jam 08:00 hingga 23:00.');
+        }
 
         // 2. Hitung Jam Selesai secara otomatis (AKURAT BERDASARKAN MENIT)
         $jam_mulai = $request->jam_mulai;
