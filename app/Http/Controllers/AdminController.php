@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Lapangan;
 use App\Models\Alat;
+use App\Models\BookingAlat; // Pastikan ini di-import
+use App\Models\User; // Pastikan ini di-import
 
 class AdminController extends Controller
 {
@@ -46,7 +48,7 @@ class AdminController extends Controller
             $data[] = $income;
         }
 
-        // E. KIRIM SEMUA DATA (Hanya satu return di paling bawah)
+        // E. KIRIM SEMUA DATA
         return view('admin.dashboard', compact(
             'total_lapangan',
             'total_alat',
@@ -56,48 +58,74 @@ class AdminController extends Controller
         ));
     }
 
-    // 2. Fungsi Update Status (ACC/Tolak)
+    // 2. Fungsi Update Status (ACC/Tolak) - VERSI CERDAS (FIX BUG STOK)
     public function updateStatus(Request $request, Booking $booking)
     {
         $request->validate([
             'status_pembayaran' => 'required|in:pending,lunas,batal'
         ]);
 
+        $statusLama = $booking->status_pembayaran;
+        $statusBaru = $request->status_pembayaran;
+
+        // 🛡️ LOGIKA PENGEMBALIAN STOK (Data Integrity)
+        // Jika status berubah dari (Pending/Lunas) menjadi BATAL
+        if ($statusLama != 'batal' && $statusBaru == 'batal') {
+            
+            // Ambil semua detail item (Alat/Barang) di pesanan ini
+            $items = BookingAlat::where('booking_id', $booking->id)->get();
+            
+            foreach ($items as $item) {
+                $alat = Alat::find($item->alat_id);
+                
+                // Jika barang tersebut jenisnya 'Beli' (Kok, Minuman, dll), kembalikan stoknya
+                if ($alat && $alat->jenis_transaksi == 'Beli') {
+                    $alat->increment('stok', $item->jumlah);
+                }
+            }
+        }
+
+        // Sebaliknya: Jika Admin memulihkan pesanan yang batal (Batal -> Lunas/Pending)
+        if ($statusLama == 'batal' && $statusBaru != 'batal') {
+            $items = BookingAlat::where('booking_id', $booking->id)->get();
+            
+            foreach ($items as $item) {
+                $alat = Alat::find($item->alat_id);
+                if ($alat && $alat->jenis_transaksi == 'Beli') {
+                    // Cek dulu stoknya cukup tidak untuk dikurangi lagi
+                    if ($alat->stok >= $item->jumlah) {
+                        $alat->decrement('stok', $item->jumlah);
+                    } else {
+                        return back()->with('error', "Gagal memulihkan! Stok {$alat->nama_alat} tidak cukup di gudang.");
+                    }
+                }
+            }
+        }
+
+        // Update status di database
         $booking->update([
-            'status_pembayaran' => $request->status_pembayaran
+            'status_pembayaran' => $statusBaru
         ]);
 
-        return back()->with('success', 'Status pesanan berhasil diperbarui!');
+        return back()->with('success', 'Status pesanan berhasil diperbarui menjadi ' . strtoupper($statusBaru));
     }
 
-    // 3. Fungsi Halaman Laporan Keuangan (Canggih)
+    // 3. Fungsi Halaman Laporan Keuangan
     public function laporan(Request $request)
     {
-        // A. Tangkap inputan tanggal dari form filter
         $start_date = $request->input('start_date');
         $end_date = $request->input('end_date');
 
-        // B. Buat Query Dasar (Hanya ambil pesanan yang LUNAS)
         $query = Booking::with(['user', 'lapangan'])->whereRaw("LOWER(status_pembayaran) = 'lunas'");
 
-        // C. Jika Admin mengisi filter tanggal, terapkan filter tersebut
         if ($start_date && $end_date) {
             $query->whereBetween('tanggal_main', [$start_date, $end_date]);
         }
 
-        // Eksekusi pencarian data
         $bookings = $query->latest()->get();
-
-        // D. Hitung Keuangan (Pisahkan Lapangan & Alat)
         $total_keseluruhan = $bookings->sum('total_harga');
-
-        // Ambil semua ID booking yang sudah terfilter untuk mencari alatnya
         $booking_ids = $bookings->pluck('id');
-
-        // Ambil total uang khusus dari penyewaan/pembelian alat
-        $total_alat = \App\Models\BookingAlat::whereIn('booking_id', $booking_ids)->sum('subtotal');
-
-        // Total uang murni dari lapangan = Total Keseluruhan dikurangi Total Alat
+        $total_alat = BookingAlat::whereIn('booking_id', $booking_ids)->sum('subtotal');
         $total_lapangan = $total_keseluruhan - $total_alat;
 
         return view('admin.laporan', compact(
@@ -109,9 +137,9 @@ class AdminController extends Controller
             'end_date'
         ));
     }
+
     public function downloadLaporanPDF(Request $request)
     {
-        // Logika filter yang sama dengan halaman laporan
         $start_date = $request->input('start_date');
         $end_date = $request->input('end_date');
 
@@ -122,12 +150,10 @@ class AdminController extends Controller
         }
 
         $bookings = $query->latest()->get();
-
         $total_keseluruhan = $bookings->sum('total_harga');
-        $total_alat = \App\Models\BookingAlat::whereIn('booking_id', $bookings->pluck('id'))->sum('subtotal');
+        $total_alat = BookingAlat::whereIn('booking_id', $bookings->pluck('id'))->sum('subtotal');
         $total_lapangan = $total_keseluruhan - $total_alat;
 
-        // Menyiapkan data untuk dikirim ke file PDF
         $pdf = Pdf::loadView('admin.laporan_pdf', compact(
             'bookings',
             'total_keseluruhan',
@@ -139,26 +165,22 @@ class AdminController extends Controller
 
         return $pdf->download('Laporan-Keuangan-GOR.pdf');
     }
-    // Fungsi untuk mengubah status Member (On/Off)
+
+    // 4. Fungsi Member Toggle
     public function toggleMember($id)
     {
-        // Cari user berdasarkan ID
-        $user = \App\Models\User::findOrFail($id);
-
-        // Ubah statusnya jadi kebalikannya (Kalau 0 jadi 1, kalau 1 jadi 0)
+        $user = User::findOrFail($id);
         $user->is_member = !$user->is_member;
         $user->save();
 
-        // Kembalikan ke halaman sebelumnya dengan pesan sukses
         $status = $user->is_member ? 'dijadikan Member' : 'dicabut status Membernya';
         return back()->with('success', "Akun {$user->name} berhasil {$status}!");
     }
-    // Fungsi untuk menampilkan halaman Daftar Pelanggan
+
+    // 5. Daftar Pelanggan
     public function daftarPelanggan()
     {
-        // Ambil semua data user dari database (diurutkan dari yang terbaru)
-        $users = \App\Models\User::latest()->get();
-
+        $users = User::latest()->get();
         return view('admin.pelanggan', compact('users'));
     }
 }
