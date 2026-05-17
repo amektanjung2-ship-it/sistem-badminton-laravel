@@ -73,33 +73,27 @@
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    const ctx = document.getElementById('grafikPendapatan').getContext('2d');
+                    const canvas = document.getElementById('grafikPendapatan');
+                    if (!canvas) return; // Jaga-jaga agar tidak error jika canvas gagal dimuat
 
-                    // Ambil data dari Controller (PHP ke JS) pakai format modern Laravel
-                    const labels = {
-                        {
-                            Illuminate\ Support\ Js::from($labels)
-                        }
-                    };
-                    const dataPendapatan = {
-                        {
-                            Illuminate\ Support\ Js::from($data)
-                        }
-                    };
+                    const ctx = canvas.getContext('2d');
+
+                    // JURUS ANTI-ERROR: Menggunakan PHP murni untuk mengoper data ke JavaScript
+                    const labels = <?php echo json_encode($labels); ?>;
+                    const dataPendapatan = <?php echo json_encode($data); ?>;
 
                     new Chart(ctx, {
                         type: 'line',
-                        // ... dan seterusnya ke bawah biarkan sama ...
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Total Pendapatan (Rp)',
+                                label: 'Total Pendapatan',
                                 data: dataPendapatan,
-                                borderColor: '#059669', // Warna garis Emerald 600
-                                backgroundColor: 'rgba(5, 150, 105, 0.1)', // Warna isian transparan
+                                borderColor: '#059669', // Warna Emerald
+                                backgroundColor: 'rgba(5, 150, 105, 0.1)',
                                 borderWidth: 2,
                                 fill: true,
-                                tension: 0.3, // Bikin garisnya sedikit melengkung halus
+                                tension: 0.3, // Membuat garis sedikit melengkung
                                 pointBackgroundColor: '#059669',
                                 pointRadius: 4,
                                 pointHoverRadius: 6
@@ -109,7 +103,7 @@
                             responsive: true,
                             plugins: {
                                 legend: {
-                                    display: false // Sembunyikan legenda biar lebih clean
+                                    display: false // Sembunyikan legenda agar lebih elegan
                                 }
                             },
                             scales: {
