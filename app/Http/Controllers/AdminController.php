@@ -15,10 +15,8 @@ class AdminController extends Controller
     // 1. Fungsi Utama Dashboard Admin
     public function index(Request $request)
     {
-        // A. Fitur Pencarian
+        // A. Fitur Pencarian Data Booking
         $search = $request->input('search');
-
-        // B. Query Data Booking (Terintegrasi dengan Search)
         $bookings = Booking::with(['user', 'lapangan'])
             ->when($search, function ($query, $search) {
                 return $query->whereHas('user', function ($q) use ($search) {
@@ -30,31 +28,52 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
-        // C. Statistik Ringkasan
+        // B. Statistik Ringkasan
         $total_lapangan = Lapangan::count();
         $total_alat = Alat::sum('stok');
 
-        // D. Logika Grafik (7 Hari Terakhir)
+        // 👇 C. LOGIKA GRAFIK DINAMIS (BISA FILTER) 👇
+        $periode = $request->input('periode', '7_days'); // Default 7 hari
         $labels = [];
         $data = [];
 
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
-            $labels[] = now()->subDays($i)->format('d M');
-
-            $income = Booking::whereDate('created_at', $date)
-                ->whereRaw("LOWER(status_pembayaran) = 'lunas'")
-                ->sum('total_harga');
-            $data[] = $income;
+        // Tentukan rentang waktu berdasarkan filter yang dipilih
+        if ($periode == 'this_month') {
+            $startDate = now()->startOfMonth();
+            $endDate = now()->endOfMonth();
+        } elseif ($periode == 'last_month') {
+            $startDate = now()->subMonth()->startOfMonth();
+            $endDate = now()->subMonth()->endOfMonth();
+        } else {
+            // Default: 7 Hari Terakhir
+            $startDate = now()->subDays(6);
+            $endDate = now();
         }
 
-        // E. KIRIM SEMUA DATA
+        // Looping dari tanggal awal ke tanggal akhir untuk membuat grafik
+        $currentDate = $startDate->copy();
+        while ($currentDate <= $endDate) {
+            $labels[] = $currentDate->format('d M');
+            
+            // Hitung total pendapatan (Lunas) di hari tersebut
+            $income = Booking::whereDate('created_at', $currentDate->format('Y-m-d'))
+                ->whereRaw("LOWER(status_pembayaran) = 'lunas'")
+                ->sum('total_harga');
+            
+            $data[] = $income;
+
+            // Lanjut ke hari berikutnya
+            $currentDate->addDay();
+        }
+        // 👆 BATAS LOGIKA GRAFIK DINAMIS 👆
+
         return view('admin.dashboard', compact(
             'total_lapangan',
             'total_alat',
             'bookings',
             'labels',
-            'data'
+            'data',
+            'periode' // Kirim data periode yang aktif ke tampilan
         ));
     }
 
