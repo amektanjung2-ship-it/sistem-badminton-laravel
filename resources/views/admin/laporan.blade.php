@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-bold text-2xl text-emerald-800 leading-tight flex items-center gap-2">
-            <span class="text-3xl">📊</span> Laporan Keuangan GOR
+            <span class="text-3xl"></span> Laporan Keuangan GOR
         </h2>
     </x-slot>
 
@@ -54,7 +54,7 @@
                         <h4 class="text-gray-500 font-medium text-sm mb-1">Pemasukan Lapangan</h4>
                         <h2 class="text-2xl font-bold text-gray-800">Rp {{ number_format($total_lapangan, 0, ',', '.') }}</h2>
                     </div>
-                    <div class="p-4 bg-emerald-50 rounded-xl text-emerald-600">🏸</div>
+                    <div class="p-4 bg-emerald-50 rounded-xl text-emerald-600"></div>
                 </div>
 
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
@@ -62,7 +62,7 @@
                         <h4 class="text-gray-500 font-medium text-sm mb-1">Pemasukan Sewa/Beli Alat</h4>
                         <h2 class="text-2xl font-bold text-gray-800">Rp {{ number_format($total_alat, 0, ',', '.') }}</h2>
                     </div>
-                    <div class="p-4 bg-teal-50 rounded-xl text-teal-600">👟</div>
+                    <div class="p-4 bg-teal-50 rounded-xl text-teal-600"></div>
                 </div>
             </div>
 

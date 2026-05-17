@@ -40,14 +40,14 @@
 
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <div class="flex items-center mb-4 border-b pb-2">
-                    <span class="text-2xl mr-2">📈</span>
+                    <span class="text-2xl mr-2"></span>
                     <h3 class="text-lg font-bold text-gray-700 font-sans">Tren Pendapatan (7 Hari Terakhir)</h3>
                 </div>
                 <div style="height: 300px; position: relative;">
                     <canvas id="incomeChart">
                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                             <div class="flex items-center mb-4 border-b pb-2">
-                                <span class="text-2xl mr-2">📈</span>
+                                <span class="text-2xl mr-2"></span>
                                 <h3 class="text-lg font-bold text-gray-700 font-sans">Tren Pendapatan (7 Hari Terakhir)</h3>
                             </div>
                             <div style="height: 300px; position: relative;">
