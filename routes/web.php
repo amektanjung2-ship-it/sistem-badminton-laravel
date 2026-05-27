@@ -8,9 +8,15 @@ use App\Http\Controllers\AdminController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\Admin\LapanganController;
 use App\Http\Controllers\Admin\AlatController;
+use App\Models\Lapangan; // Pemanggilan model Lapangan untuk halaman beranda
 
+// ==========================================
+// RUTE HALAMAN UTAMA (LANDING PAGE)
+// ==========================================
 Route::get('/', function () {
-    return view('welcome');
+    // Mengambil semua data lapangan untuk ditampilkan di katalog beranda
+    $lapangans = Lapangan::all();
+    return view('welcome', compact('lapangans'));
 });
 
 // ==========================================
@@ -37,7 +43,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
 
 // ==========================================
 // RUTE KHUSUS ADMIN (DILINDUNGI MIDDLEWARE)
