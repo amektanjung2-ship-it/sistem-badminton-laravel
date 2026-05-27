@@ -1,10 +1,18 @@
+@php
+    /**
+     * @var array $labels
+     * @var array $data
+     * @var int $total_lapangan
+     * @var int $total_alat
+     * @var \Illuminate\Database\Eloquent\Collection $bookings
+     * @var string $periode
+     */
+@endphp
 <x-app-layout>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Ruang Kendali Admin ') }}
+                {{ __('Ruang Kendali Admin') }}
             </h2>
 
             <a href="{{ route('admin.laporan') }}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded shadow transition">
@@ -23,6 +31,7 @@
             </div>
             @endif
 
+            {{-- KOTAK STATISTIK --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-blue-500 hover:shadow-md transition">
                     <div class="text-gray-500 text-sm font-semibold uppercase italic">Total Lapangan</div>
@@ -40,7 +49,6 @@
 
             {{-- AREA GRAFIK PENDAPATAN --}}
             <div class="mb-8">
-                {{-- 1. Bagian Header & Filter --}}
                 <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-t-xl shadow-sm border border-gray-200 border-b-0">
                     <div class="flex items-center gap-3 mb-4 sm:mb-0">
                         <div class="p-2 bg-emerald-50 rounded-lg border border-emerald-100">
@@ -63,68 +71,16 @@
                     </form>
                 </div>
 
-                {{-- 2. Bagian Kanvas Grafik --}}
                 <div class="bg-white p-5 rounded-b-xl shadow-sm border border-gray-200">
                     <canvas id="grafikPendapatan" height="80"></canvas>
                 </div>
             </div>
 
-            {{-- 3. Script untuk Menggambar Grafik --}}
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const canvas = document.getElementById('grafikPendapatan');
-                    if (!canvas) return; // Jaga-jaga agar tidak error jika canvas gagal dimuat
-
-                    const ctx = canvas.getContext('2d');
-
-                    // JURUS ANTI-ERROR: Menggunakan PHP murni untuk mengoper data ke JavaScript
-                    const labels = <?php echo json_encode($labels); ?>;
-                    const dataPendapatan = <?php echo json_encode($data); ?>;
-
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Total Pendapatan',
-                                data: dataPendapatan,
-                                borderColor: '#059669', // Warna Emerald
-                                backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.3, // Membuat garis sedikit melengkung
-                                pointBackgroundColor: '#059669',
-                                pointRadius: 4,
-                                pointHoverRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    display: false // Sembunyikan legenda agar lebih elegan
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        callback: function(value) {
-                                            return 'Rp ' + value.toLocaleString('id-ID');
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                });
-            </script>
+            {{-- DAFTAR PESANAN MASUK --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
                 <div class="p-6 text-gray-900">
-
                     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                        <h3 class="text-lg font-bold border-b-2 border-blue-500 pb-1 inline-block"> Daftar Pesanan Masuk</h3>
+                        <h3 class="text-lg font-bold border-b-2 border-blue-500 pb-1 inline-block">Daftar Pesanan Masuk</h3>
 
                         <form action="{{ route('admin.dashboard') }}" method="GET" class="flex w-full md:w-auto">
                             <input type="text" name="search" value="{{ request('search') }}"
@@ -157,10 +113,10 @@
                                 @forelse($bookings as $booking)
                                 <tr class="hover:bg-blue-50 transition duration-150">
                                     <td class="py-3 px-4">
-                                        <div class="font-semibold text-gray-800">{{ $booking->user->name }}</div>
+                                        <div class="font-semibold text-gray-800">{{ $booking->user->name ?? 'User Terhapus' }}</div>
                                         <div class="text-xs text-gray-500">{{ $booking->user->no_hp ?? '-' }}</div>
                                     </td>
-                                    <td class="py-3 px-4 text-gray-700 font-medium">{{ $booking->lapangan->nama_lapangan }}</td>
+                                    <td class="py-3 px-4 text-gray-700 font-medium">{{ $booking->lapangan->nama_lapangan ?? 'Lpg. Terhapus' }}</td>
                                     <td class="py-3 px-4">
                                         <div class="font-medium text-gray-800 text-sm">{{ \Carbon\Carbon::parse($booking->tanggal_main)->format('d M Y') }}</div>
                                         <div class="text-xs text-gray-500 italic">{{ \Carbon\Carbon::parse($booking->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->jam_selesai)->format('H:i') }}</div>
@@ -213,31 +169,34 @@
         </div>
     </div>
 
+    {{-- SCRIPT GRAFIK (CUKUP SATU SAJA DI SINI) --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const canvasElement = document.getElementById('incomeChart');
-            if (!canvasElement) return; // Mencegah error kalau canvas tidak ditemukan
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('grafikPendapatan');
+            if (!canvas) return;
 
-            const ctx = canvasElement.getContext('2d');
+            const ctx = canvas.getContext('2d');
 
-            // Trik Jitu: Jadikan string dulu agar VS Code diam, lalu parse menjadi data!
-            const labelData = JSON.parse('{!! json_encode($labels) !!}');
-            const chartData = JSON.parse('{!! json_encode($data) !!}');
+            // Oper data dengan aman menggunakan PHP murni
+            const labels = <?php echo json_encode($labels); ?>;
+            const dataPendapatan = <?php echo json_encode($data); ?>;
 
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labelData,
+                    labels: labels,
                     datasets: [{
-                        label: 'Pendapatan (Rp)',
-                        data: chartData,
-                        borderColor: '#10b981', // Hijau
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#10b981',
-                        pointRadius: 4,
+                        label: 'Total Pendapatan (Rp)',
+                        data: dataPendapatan,
+                        borderColor: '#059669', // Emerald
+                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                        borderWidth: 2,
                         fill: true,
-                        tension: 0.4
+                        tension: 0.3, 
+                        pointBackgroundColor: '#059669',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
