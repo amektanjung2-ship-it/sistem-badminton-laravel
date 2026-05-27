@@ -68,8 +68,12 @@
                 {{-- Pastikan variabel $lapangans dikirim dari Controller Anda --}}
                 @forelse ($lapangans as $lapangan)
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition duration-300 flex flex-col">
-                    <div class="h-48 bg-slate-200 flex items-center justify-center">
-                        <span class="text-slate-400 font-medium">Foto {{ $lapangan->nama_lapangan }}</span>
+                    <div class="h-48 overflow-hidden">
+                        {{-- Kita asumsikan data nama lapangan di database adalah 'Lapangan A', 'Lapangan B', dst --}}
+                        {{-- Kita gunakan fungsi Str::slug untuk mengubah 'Lapangan A' menjadi 'court-a' --}}
+                        <img src="{{ asset('images/courts/' . Str::slug($lapangan->nama_lapangan) . '.png') }}"
+                            alt="Foto {{ $lapangan->nama_lapangan }}"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                     </div>
                     <div class="p-6 flex-1 flex flex-col justify-between">
                         <div>

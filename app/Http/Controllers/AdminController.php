@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Lapangan;
 use App\Models\Alat;
-use App\Models\BookingAlat; // Pastikan ini di-import
-use App\Models\User; // Pastikan ini di-import
+use App\Models\BookingAlat;
+use App\Models\User;
 
 class AdminController extends Controller
 {
@@ -32,12 +32,11 @@ class AdminController extends Controller
         $total_lapangan = Lapangan::count();
         $total_alat = Alat::sum('stok');
 
-        // 👇 C. LOGIKA GRAFIK DINAMIS (BISA FILTER) 👇
-        $periode = $request->input('periode', '7_days'); // Default 7 hari
+        // C. LOGIKA GRAFIK DINAMIS
+        $periode = $request->input('periode', '7_days');
         $labels = [];
         $data = [];
 
-        // Tentukan rentang waktu berdasarkan filter yang dipilih
         if ($periode == 'this_month') {
             $startDate = now()->startOfMonth();
             $endDate = now()->endOfMonth();
@@ -45,27 +44,21 @@ class AdminController extends Controller
             $startDate = now()->subMonth()->startOfMonth();
             $endDate = now()->subMonth()->endOfMonth();
         } else {
-            // Default: 7 Hari Terakhir
             $startDate = now()->subDays(6);
             $endDate = now();
         }
 
-        // Looping dari tanggal awal ke tanggal akhir untuk membuat grafik
         $currentDate = $startDate->copy();
         while ($currentDate <= $endDate) {
             $labels[] = $currentDate->format('d M');
             
-            // Hitung total pendapatan (Lunas) di hari tersebut
             $income = Booking::whereDate('created_at', $currentDate->format('Y-m-d'))
                 ->whereRaw("LOWER(status_pembayaran) = 'lunas'")
                 ->sum('total_harga');
             
             $data[] = $income;
-
-            // Lanjut ke hari berikutnya
             $currentDate->addDay();
         }
-        // 👆 BATAS LOGIKA GRAFIK DINAMIS 👆
 
         return view('admin.dashboard', compact(
             'total_lapangan',
@@ -73,11 +66,11 @@ class AdminController extends Controller
             'bookings',
             'labels',
             'data',
-            'periode' // Kirim data periode yang aktif ke tampilan
+            'periode'
         ));
     }
 
-    // 2. Fungsi Update Status (ACC/Tolak) - VERSI CERDAS (FIX BUG STOK)
+    // 2. Fungsi Update Status (ACC/Tolak)
     public function updateStatus(Request $request, Booking $booking)
     {
         $request->validate([
@@ -87,31 +80,25 @@ class AdminController extends Controller
         $statusLama = $booking->status_pembayaran;
         $statusBaru = $request->status_pembayaran;
 
-        // 🛡️ LOGIKA PENGEMBALIAN STOK (Data Integrity)
-        // Jika status berubah dari (Pending/Lunas) menjadi BATAL
+        // Logika Pengembalian Stok (Batal)
         if ($statusLama != 'batal' && $statusBaru == 'batal') {
-            
-            // Ambil semua detail item (Alat/Barang) di pesanan ini
             $items = BookingAlat::where('booking_id', $booking->id)->get();
             
             foreach ($items as $item) {
                 $alat = Alat::find($item->alat_id);
-                
-                // Jika barang tersebut jenisnya 'Beli' (Kok, Minuman, dll), kembalikan stoknya
                 if ($alat && $alat->jenis_transaksi == 'Beli') {
                     $alat->increment('stok', $item->jumlah);
                 }
             }
         }
 
-        // Sebaliknya: Jika Admin memulihkan pesanan yang batal (Batal -> Lunas/Pending)
+        // Logika Pemulihan Stok (Batal -> Lunas/Pending)
         if ($statusLama == 'batal' && $statusBaru != 'batal') {
             $items = BookingAlat::where('booking_id', $booking->id)->get();
             
             foreach ($items as $item) {
                 $alat = Alat::find($item->alat_id);
                 if ($alat && $alat->jenis_transaksi == 'Beli') {
-                    // Cek dulu stoknya cukup tidak untuk dikurangi lagi
                     if ($alat->stok >= $item->jumlah) {
                         $alat->decrement('stok', $item->jumlah);
                     } else {
@@ -121,7 +108,6 @@ class AdminController extends Controller
             }
         }
 
-        // Update status di database
         $booking->update([
             'status_pembayaran' => $statusBaru
         ]);
@@ -199,7 +185,10 @@ class AdminController extends Controller
     // 5. Daftar Pelanggan
     public function daftarPelanggan()
     {
-        $users = User::latest()->get();
-        return view('admin.pelanggan', compact('users'));
+        // PERUBAHAN: Menyesuaikan nama variabel menjadi $pelanggans
+        // dan mengecualikan akun dengan role 'admin' dari daftar
+        $pelanggans = User::where('role', '!=', 'admin')->latest()->get();
+        
+        return view('admin.pelanggan', compact('pelanggans'));
     }
 }
