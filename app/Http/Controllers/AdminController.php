@@ -15,7 +15,6 @@ class AdminController extends Controller
     // 1. Fungsi Utama Dashboard Admin
     public function index(Request $request)
     {
-        // A. Fitur Pencarian Data Booking
         $search = $request->input('search');
         $bookings = Booking::with(['user', 'lapangan'])
             ->when($search, function ($query, $search) {
@@ -28,11 +27,9 @@ class AdminController extends Controller
             ->latest()
             ->get();
 
-        // B. Statistik Ringkasan
         $total_lapangan = Lapangan::count();
         $total_alat = Alat::sum('stok');
 
-        // C. LOGIKA GRAFIK DINAMIS
         $periode = $request->input('periode', '7_days');
         $labels = [];
         $data = [];
@@ -80,25 +77,25 @@ class AdminController extends Controller
         $statusLama = $booking->status_pembayaran;
         $statusBaru = $request->status_pembayaran;
 
-        // Logika Pengembalian Stok (Batal)
+        // Logika 1: Pengembalian Stok
         if ($statusLama != 'batal' && $statusBaru == 'batal') {
             $items = BookingAlat::where('booking_id', $booking->id)->get();
             
             foreach ($items as $item) {
                 $alat = Alat::find($item->alat_id);
-                if ($alat && $alat->jenis_transaksi == 'Beli') {
+                if ($alat && strtolower($alat->jenis_transaksi) == 'beli') {
                     $alat->increment('stok', $item->jumlah);
                 }
             }
         }
 
-        // Logika Pemulihan Stok (Batal -> Lunas/Pending)
+        // Logika 2: Pemulihan Stok
         if ($statusLama == 'batal' && $statusBaru != 'batal') {
             $items = BookingAlat::where('booking_id', $booking->id)->get();
             
             foreach ($items as $item) {
                 $alat = Alat::find($item->alat_id);
-                if ($alat && $alat->jenis_transaksi == 'Beli') {
+                if ($alat && strtolower($alat->jenis_transaksi) == 'beli') {
                     if ($alat->stok >= $item->jumlah) {
                         $alat->decrement('stok', $item->jumlah);
                     } else {
@@ -111,6 +108,28 @@ class AdminController extends Controller
         $booking->update([
             'status_pembayaran' => $statusBaru
         ]);
+
+        // Logika 3: Peningkatan Status VIP Otomatis
+        if ($statusBaru === 'lunas' && !$booking->user->is_member) {
+            
+            $user = $booking->user;
+
+            $totalTransaksi = Booking::where('user_id', $user->id)
+                ->where('status_pembayaran', 'lunas')
+                ->count();
+
+            $totalPengeluaran = Booking::where('user_id', $user->id)
+                ->where('status_pembayaran', 'lunas')
+                ->sum('total_harga');
+
+            if ($totalTransaksi >= 10 || $totalPengeluaran >= 300000) {
+                $user->update([
+                    'is_member' => true
+                ]);
+
+                return back()->with('success', 'Status pesanan berhasil diperbarui menjadi Lunas. Pelanggan ini telah otomatis ditingkatkan menjadi Member VIP karena memenuhi syarat transaksi!');
+            }
+        }
 
         return back()->with('success', 'Status pesanan berhasil diperbarui menjadi ' . strtoupper($statusBaru));
     }
@@ -172,7 +191,7 @@ class AdminController extends Controller
     }
 
     // 4. Fungsi Member Toggle
-    public function toggleMember($id)
+    public function toggleMember(string $id)
     {
         $user = User::findOrFail($id);
         $user->is_member = !$user->is_member;
@@ -185,8 +204,6 @@ class AdminController extends Controller
     // 5. Daftar Pelanggan
     public function daftarPelanggan()
     {
-        // PERUBAHAN: Menyesuaikan nama variabel menjadi $pelanggans
-        // dan mengecualikan akun dengan role 'admin' dari daftar
         $pelanggans = User::where('role', '!=', 'admin')->latest()->get();
         
         return view('admin.pelanggan', compact('pelanggans'));

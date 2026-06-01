@@ -23,6 +23,23 @@
             </div>
             @endif
 
+            {{-- INFORMASI STATUS KEANGGOTAAN --}}
+            @if(auth()->user()->is_member)
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-xl shadow-sm mb-6">
+                <div class="ml-3">
+                    <p class="text-sm font-bold text-yellow-800">Status Keanggotaan: VIP Aktif</p>
+                    <p class="text-sm font-medium text-yellow-700 mt-1">Sistem akan mengaplikasikan potongan harga sebesar 10% secara otomatis pada setiap transaksi penyewaan Anda.</p>
+                </div>
+            </div>
+            @else
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm mb-6">
+                <div class="ml-3">
+                    <p class="text-sm font-bold text-blue-800">Informasi Keanggotaan Reguler</p>
+                    <p class="text-sm font-medium text-blue-700 mt-1">Anda dapat menghubungi Administrator fasilitas untuk meningkatkan status akun menjadi VIP dan mendapatkan potongan harga permanen sebesar 10%.</p>
+                </div>
+            </div>
+            @endif
+
             {{-- BAGIAN: KATALOG LAPANGAN --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-gray-200">
                 <div class="p-6 md:p-8">

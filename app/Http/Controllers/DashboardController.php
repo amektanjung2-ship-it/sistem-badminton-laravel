@@ -23,12 +23,26 @@ class DashboardController extends Controller
             ->where('user_id', Auth::id())
             ->latest()
             ->get();
+
+        // Kalkulasi untuk Bilah Kemajuan (Progress Bar) VIP
+        $totalTransaksiLunas = Booking::where('user_id', Auth::id())
+            ->where('status_pembayaran', 'lunas')
+            ->count();
+
+        $totalPengeluaranLunas = Booking::where('user_id', Auth::id())
+            ->where('status_pembayaran', 'lunas')
+            ->sum('total_harga');
             
         // Mengirim data ke view dashboard.blade.php
-        return view('dashboard', compact('lapangans', 'alats', 'riwayat_bookings'));
+        return view('dashboard', compact(
+            'lapangans', 
+            'alats', 
+            'riwayat_bookings',
+            'totalTransaksiLunas',
+            'totalPengeluaranLunas'
+        ));
     }
 
-    // 👇 FUNGSI INI YANG TADI HILANG (Untuk tombol Cetak Tiket) 👇
     public function cetakTiket(Booking $booking)
     {
         // Keamanan: Cek pemilik
@@ -39,7 +53,6 @@ class DashboardController extends Controller
         return view('tiket', compact('booking'));
     }
 
-    // 👇 Fungsi untuk tombol Download PDF 👇
     public function downloadPdf(Booking $booking)
     {
         // Keamanan: Cek pemilik
