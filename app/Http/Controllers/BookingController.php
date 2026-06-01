@@ -8,6 +8,7 @@ use App\Models\Alat;
 use App\Models\Booking;
 use App\Models\BookingAlat;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; // WAJIB DITAMBAHKAN UNTUK TRANSAKSI DATABASE
 
 class BookingController extends Controller
 {
@@ -31,10 +32,10 @@ class BookingController extends Controller
         $request->validate([
             'tanggal_main' => 'required|date|after_or_equal:today',
             'jam_mulai'    => 'required',
-            'durasi'       => 'required|numeric|min:0.5|max:10',
+            'durasi'       => 'required|numeric|min:1|max:10', // Diubah minimal 1 jam sesuai UI baru
         ], [
             'tanggal_main.after_or_equal' => 'Tidak bisa memesan untuk hari yang sudah lewat!',
-            'durasi.min'                  => 'Durasi minimal 30 menit (0.5).',
+            'durasi.min'                  => 'Durasi minimal 1 jam.',
             'durasi.max'                  => 'Durasi maksimal 10 jam.',
         ]);
 
@@ -64,109 +65,127 @@ class BookingController extends Controller
             return back()->with('error', 'Jadwal melebihi jam operasional. Maksimal selesai pukul 23:00.');
         }
 
-        // 6. Cek bentrok jadwal
-        $bentrok = Booking::where('lapangan_id', $lapangan->id)
-            ->where('tanggal_main', $request->tanggal_main)
-            ->where('status_pembayaran', '!=', 'batal')
-            ->where(function ($query) use ($jam_mulai, $jam_selesai) {
-                $query->where('jam_mulai', '<', $jam_selesai)
-                    ->where('jam_selesai', '>', $jam_mulai);
-            })->exists();
+        // =====================================================================================
+        // MEMULAI ZONA AMAN (TRANSAKSI DATABASE & PESSIMISTIC LOCKING)
+        // =====================================================================================
+        DB::beginTransaction();
 
-        if ($bentrok) {
-            return back()->with('error', 'Maaf! Lapangan sudah dipesan pada jam tersebut. Silakan pilih jam lain.');
-        }
+        try {
+            // [KUNCI KEAMANAN]: Mengunci baris Lapangan ini di database. 
+            // Jika ada orang lain yang menekan tombol di milidetik yang sama, mereka harus antre di baris kode ini.
+            $lapanganLocked = Lapangan::where('id', $lapangan->id)->lockForUpdate()->first();
 
-        // 7. Validasi stok alat
-        if ($request->has('alat')) {
-            foreach ($request->alat as $alat_id => $jumlah) {
-                $jumlah = (int) $jumlah;
-                if ($jumlah <= 0) continue;
+            // 6. Cek bentrok jadwal (Sekarang kebal dari serangan pemesanan bersamaan / Race Condition)
+            $bentrok = Booking::where('lapangan_id', $lapanganLocked->id)
+                ->where('tanggal_main', $request->tanggal_main)
+                ->where('status_pembayaran', '!=', 'batal')
+                ->where(function ($query) use ($jam_mulai, $jam_selesai) {
+                    $query->where('jam_mulai', '<', $jam_selesai)
+                        ->where('jam_selesai', '>', $jam_mulai);
+                })->exists();
 
-                $alat = Alat::find($alat_id);
-                if (!$alat) continue;
+            if ($bentrok) {
+                DB::rollBack(); // Batalkan antrean kunci
+                return back()->with('error', 'Maaf! Lapangan sudah dipesan pada jam tersebut. Silakan pilih jam lain.');
+            }
 
-                if ($alat->jenis_transaksi == 'Sewa') {
-                    $terpakai = BookingAlat::join('bookings', 'booking_alats.booking_id', '=', 'bookings.id')
-                        ->where('booking_alats.alat_id', $alat_id)
-                        ->where('bookings.tanggal_main', $request->tanggal_main)
-                        ->where('bookings.jam_mulai', '<', $jam_selesai)
-                        ->where('bookings.jam_selesai', '>', $jam_mulai)
-                        ->where('bookings.status_pembayaran', '!=', 'batal')
-                        ->sum('booking_alats.jumlah');
+            // 7. Validasi stok alat
+            if ($request->has('alat')) {
+                foreach ($request->alat as $alat_id => $jumlah) {
+                    $jumlah = (int) $jumlah;
+                    if ($jumlah <= 0) continue;
 
-                    $sisa_stok = $alat->stok - $terpakai;
+                    // Kita juga kunci data alatnya agar tidak ada yang menyewa barang yang sama bersamaan
+                    $alat = Alat::where('id', $alat_id)->lockForUpdate()->first();
+                    if (!$alat) continue;
 
-                    if ($jumlah > $sisa_stok) {
-                        // ✅ FIX: typo nama_barang -> nama_alat
-                        return back()->with('error', "Sisa stok {$alat->nama_alat} di jam tersebut hanya {$sisa_stok}.");
-                    }
-                } else {
-                    if ($jumlah > $alat->stok) {
-                        // ✅ FIX: typo nama_barang -> nama_alat
-                        return back()->with('error', "Stok {$alat->nama_alat} tidak mencukupi. Sisa: {$alat->stok}");
+                    if ($alat->jenis_transaksi == 'Sewa') {
+                        $terpakai = BookingAlat::join('bookings', 'booking_alats.booking_id', '=', 'bookings.id')
+                            ->where('booking_alats.alat_id', $alat_id)
+                            ->where('bookings.tanggal_main', $request->tanggal_main)
+                            ->where('bookings.jam_mulai', '<', $jam_selesai)
+                            ->where('bookings.jam_selesai', '>', $jam_mulai)
+                            ->where('bookings.status_pembayaran', '!=', 'batal')
+                            ->sum('booking_alats.jumlah');
+
+                        $sisa_stok = $alat->stok - $terpakai;
+
+                        if ($jumlah > $sisa_stok) {
+                            DB::rollBack();
+                            return back()->with('error', "Sisa stok {$alat->nama_alat} di jam tersebut hanya {$sisa_stok}.");
+                        }
+                    } else {
+                        if ($jumlah > $alat->stok) {
+                            DB::rollBack();
+                            return back()->with('error', "Stok {$alat->nama_alat} tidak mencukupi. Sisa: {$alat->stok}");
+                        }
                     }
                 }
             }
-        }
 
-        // 8. Hitung total harga
-        $total_harga_lapangan = $lapangan->harga_per_jam * $request->durasi;
-        $total_harga_alat     = 0;
+            // 8. Hitung total harga
+            $total_harga_lapangan = $lapanganLocked->harga_per_jam * $request->durasi;
+            $total_harga_alat     = 0;
 
-        if ($request->has('alat')) {
-            foreach ($request->alat as $alat_id => $jumlah) {
-                $jumlah = (int) $jumlah;
-                if ($jumlah <= 0) continue;
-
-                $alat              = Alat::find($alat_id);
-                $total_harga_alat += $alat->harga_sewa * $jumlah;
-            }
-        }
-
-        $total = $total_harga_lapangan + $total_harga_alat;
-
-        // 9. Diskon member 10%
-        if (Auth::user()->is_member) {
-            $total = $total - ($total * 0.10);
-        }
-
-        // 10. Simpan booking
-        $booking = Booking::create([
-            'user_id'           => Auth::id(),
-            'lapangan_id'       => $lapangan->id,
-            'tanggal_main'      => $request->tanggal_main,
-            'jam_mulai'         => $jam_mulai,
-            'jam_selesai'       => $jam_selesai,
-            'total_harga'       => round($total),
-            'status_pembayaran' => 'pending',
-        ]);
-
-        // 11. Simpan booking alat & kurangi stok
-        if ($request->has('alat')) {
-            foreach ($request->alat as $alat_id => $jumlah) {
-                $jumlah = (int) $jumlah;
-                if ($jumlah <= 0) continue;
-
-                $alat = Alat::find($alat_id);
-
-                BookingAlat::create([
-                    'booking_id' => $booking->id,
-                    'alat_id'    => $alat_id,
-                    'jumlah'     => $jumlah,
-                    'subtotal'   => $alat->harga_sewa * $jumlah,
-                ]);
-
-                // Hanya kurangi stok fisik untuk barang "Beli"
-                if ($alat->jenis_transaksi == 'Beli') {
-                    $alat->decrement('stok', $jumlah);
+            if ($request->has('alat')) {
+                foreach ($request->alat as $alat_id => $jumlah) {
+                    $jumlah = (int) $jumlah;
+                    if ($jumlah <= 0) continue;
+                    $alat = Alat::find($alat_id);
+                    $total_harga_alat += $alat->harga_sewa * $jumlah;
                 }
             }
-        }
 
-        $pesan_diskon = Auth::user()->is_member ? ' (sudah termasuk diskon member 10%)' : '';
-        return redirect()->route('dashboard')
-            ->with('success', "Booking berhasil! Total: Rp " . number_format($total, 0, ',', '.') . $pesan_diskon . ". Menunggu konfirmasi admin.");
+            $total = $total_harga_lapangan + $total_harga_alat;
+
+            // 9. Diskon member 10%
+            if (Auth::user()->is_member) {
+                $total = $total - ($total * 0.10);
+            }
+
+            // 10. Simpan booking ke pangkalan data
+            $booking = Booking::create([
+                'user_id'           => Auth::id(),
+                'lapangan_id'       => $lapanganLocked->id,
+                'tanggal_main'      => $request->tanggal_main,
+                'jam_mulai'         => $jam_mulai,
+                'jam_selesai'       => $jam_selesai,
+                'total_harga'       => round($total),
+                'status_pembayaran' => 'pending',
+            ]);
+
+            // 11. Simpan booking alat & kurangi stok
+            if ($request->has('alat')) {
+                foreach ($request->alat as $alat_id => $jumlah) {
+                    $jumlah = (int) $jumlah;
+                    if ($jumlah <= 0) continue;
+
+                    $alat = Alat::find($alat_id);
+
+                    BookingAlat::create([
+                        'booking_id' => $booking->id,
+                        'alat_id'    => $alat_id,
+                        'jumlah'     => $jumlah,
+                        'subtotal'   => $alat->harga_sewa * $jumlah,
+                    ]);
+
+                    if ($alat->jenis_transaksi == 'Beli') {
+                        $alat->decrement('stok', $jumlah);
+                    }
+                }
+            }
+
+            // 12. Tutup Transaksi dan Permanenkan Data (Pelepasan Kunci)
+            DB::commit();
+
+            $pesan_diskon = Auth::user()->is_member ? ' (sudah termasuk diskon member 10%)' : '';
+            return redirect()->route('dashboard')
+                ->with('success', "Booking berhasil! Total: Rp " . number_format($total, 0, ',', '.') . $pesan_diskon . ". Menunggu konfirmasi admin.");
+
+        } catch (\Exception $e) {
+            DB::rollBack(); // Jika terjadi sistem error (mati lampu, server down), batalkan semua!
+            return back()->with('error', 'Terjadi kendala pada server saat memproses pesanan Anda. Silakan coba beberapa saat lagi.');
+        }
     }
 
     // API untuk kalender jadwal
