@@ -23,19 +23,97 @@
             </div>
             @endif
 
-            {{-- INFORMASI STATUS KEANGGOTAAN --}}
+            {{-- KARTU STATUS KEANGGOTAAN --}}
             @if(auth()->user()->is_member)
-            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-xl shadow-sm mb-6">
-                <div class="ml-3">
-                    <p class="text-sm font-bold text-yellow-800">Status Keanggotaan: VIP Aktif</p>
-                    <p class="text-sm font-medium text-yellow-700 mt-1">Sistem akan mengaplikasikan potongan harga sebesar 10% secara otomatis pada setiap transaksi penyewaan Anda.</p>
+            {{-- SUDAH VIP --}}
+            <div class="bg-gradient-to-r from-amber-400 to-yellow-500 rounded-2xl shadow-md p-6 text-white">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-white/20 rounded-xl p-3 flex-shrink-0">
+                            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-widest text-yellow-100">Status Keanggotaan</p>
+                            <p class="text-2xl font-extrabold tracking-tight mt-0.5">Member VIP Aktif</p>
+                            <p class="text-sm text-yellow-100 mt-1">Selamat! Anda menikmati diskon <span class="font-extrabold text-white">10%</span> untuk setiap transaksi.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white/20 border border-white/30 rounded-xl px-5 py-3 text-center flex-shrink-0">
+                        <p class="text-xs font-bold text-yellow-100 uppercase tracking-wide">Total Transaksi</p>
+                        <p class="text-3xl font-extrabold mt-0.5">{{ $totalTransaksiLunas }}x</p>
+                    </div>
                 </div>
             </div>
+
             @else
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm mb-6">
-                <div class="ml-3">
-                    <p class="text-sm font-bold text-blue-800">Informasi Keanggotaan Reguler</p>
-                    <p class="text-sm font-medium text-blue-700 mt-1">Anda dapat menghubungi Administrator fasilitas untuk meningkatkan status akun menjadi VIP dan mendapatkan potongan harga permanen sebesar 10%.</p>
+            {{-- BELUM VIP: TAMPILKAN PROGRESS BAR --}}
+            @php
+                $targetTransaksi  = 10;
+                $targetPengeluaran = 300000;
+                $pctTransaksi     = min(100, round(($totalTransaksiLunas / $targetTransaksi) * 100));
+                $pctPengeluaran   = min(100, round(($totalPengeluaranLunas / $targetPengeluaran) * 100));
+                $sisaTransaksi    = max(0, $targetTransaksi - $totalTransaksiLunas);
+                $sisaPengeluaran  = max(0, $targetPengeluaran - $totalPengeluaranLunas);
+            @endphp
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="bg-amber-50 rounded-xl p-2.5 border border-amber-100">
+                        <svg class="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-extrabold text-gray-900 text-base">Kemajuan Menuju Member VIP</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Penuhi salah satu syarat di bawah untuk mendapatkan diskon <span class="font-bold text-amber-600">10%</span> selamanya.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                    {{-- PROGRESS: JUMLAH TRANSAKSI --}}
+                    <div class="bg-slate-50 rounded-xl p-4 border border-gray-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jumlah Transaksi</p>
+                            <span class="text-xs font-extrabold {{ $totalTransaksiLunas >= $targetTransaksi ? 'text-emerald-600' : 'text-gray-700' }}">
+                                {{ $totalTransaksiLunas }} / {{ $targetTransaksi }}x
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div class="h-3 rounded-full transition-all duration-500 {{ $pctTransaksi >= 100 ? 'bg-emerald-500' : 'bg-amber-400' }}"
+                                 style="width: {{ $pctTransaksi }}%"></div>
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-2">
+                            @if($sisaTransaksi > 0)
+                                Kurang <span class="font-bold text-gray-700">{{ $sisaTransaksi }}x</span> transaksi lagi
+                            @else
+                                <span class="font-bold text-emerald-600">✓ Syarat terpenuhi!</span>
+                            @endif
+                        </p>
+                    </div>
+
+                    {{-- PROGRESS: TOTAL PENGELUARAN --}}
+                    <div class="bg-slate-50 rounded-xl p-4 border border-gray-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-xs font-bold text-gray-600 uppercase tracking-wide">Total Pengeluaran</p>
+                            <span class="text-xs font-extrabold {{ $totalPengeluaranLunas >= $targetPengeluaran ? 'text-emerald-600' : 'text-gray-700' }}">
+                                Rp {{ number_format($totalPengeluaranLunas, 0, ',', '.') }}
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div class="h-3 rounded-full transition-all duration-500 {{ $pctPengeluaran >= 100 ? 'bg-emerald-500' : 'bg-blue-400' }}"
+                                 style="width: {{ $pctPengeluaran }}%"></div>
+                        </div>
+                        <p class="text-[11px] text-gray-500 mt-2">
+                            @if($sisaPengeluaran > 0)
+                                Kurang <span class="font-bold text-gray-700">Rp {{ number_format($sisaPengeluaran, 0, ',', '.') }}</span> lagi
+                            @else
+                                <span class="font-bold text-emerald-600">✓ Syarat terpenuhi!</span>
+                            @endif
+                        </p>
+                    </div>
+
                 </div>
             </div>
             @endif
