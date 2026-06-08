@@ -266,6 +266,48 @@
                         </table>
                     </div>
 
+                    {{-- NAVIGASI PAGINATION --}}
+                    @if($riwayat_bookings->hasPages())
+                    <div class="mt-5 flex justify-center">
+                        <nav class="flex items-center gap-1">
+                            {{-- Tombol Sebelumnya --}}
+                            @if($riwayat_bookings->onFirstPage())
+                                <span class="px-3 py-2 text-xs font-bold text-gray-300 bg-white border border-gray-200 rounded-lg cursor-not-allowed">
+                                    &laquo; Sebelumnya
+                                </span>
+                            @else
+                                <a href="{{ $riwayat_bookings->previousPageUrl() }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">
+                                    &laquo; Sebelumnya
+                                </a>
+                            @endif
+
+                            {{-- Nomor Halaman --}}
+                            @foreach($riwayat_bookings->getUrlRange(1, $riwayat_bookings->lastPage()) as $page => $url)
+                                @if($page == $riwayat_bookings->currentPage())
+                                    <span class="px-3 py-2 text-xs font-bold text-white bg-emerald-600 border border-emerald-600 rounded-lg">
+                                        {{ $page }}
+                                    </span>
+                                @else
+                                    <a href="{{ $url }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">
+                                        {{ $page }}
+                                    </a>
+                                @endif
+                            @endforeach
+
+                            {{-- Tombol Berikutnya --}}
+                            @if($riwayat_bookings->hasMorePages())
+                                <a href="{{ $riwayat_bookings->nextPageUrl() }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">
+                                    Berikutnya &raquo;
+                                </a>
+                            @else
+                                <span class="px-3 py-2 text-xs font-bold text-gray-300 bg-white border border-gray-200 rounded-lg cursor-not-allowed">
+                                    Berikutnya &raquo;
+                                </span>
+                            @endif
+                        </nav>
+                    </div>
+                    @endif
+
                 </div>
             </div>
 

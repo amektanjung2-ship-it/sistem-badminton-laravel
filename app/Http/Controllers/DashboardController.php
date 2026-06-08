@@ -22,7 +22,7 @@ class DashboardController extends Controller
         $riwayat_bookings = Booking::with('lapangan')
             ->where('user_id', Auth::id())
             ->latest()
-            ->get();
+            ->paginate(8); // Tampilkan 8 booking per halaman
 
         // Kalkulasi untuk Bilah Kemajuan (Progress Bar) VIP
         $totalTransaksiLunas = Booking::where('user_id', Auth::id())
