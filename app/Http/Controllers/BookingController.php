@@ -40,10 +40,11 @@ class BookingController extends Controller
             'durasi.max'                  => 'Durasi maksimal 10 jam.',
         ]);
 
-        // 2. Validasi jam operasional
-        $jam_cek = (int) date('H', strtotime($request->jam_mulai));
-        if ($jam_cek < 8 || $jam_cek >= 23) {
-            return back()->with('error', 'GOR hanya beroperasi antara jam 08:00 hingga 23:00.');
+        // 2. Validasi jam mulai dalam operasional (08:00 - 22:00)
+        // Jam mulai maksimal 22:00 karena minimal main 1 jam, GOR tutup 23:00
+        $jam_mulai_int = (int) date('H', strtotime($request->jam_mulai));
+        if ($jam_mulai_int < 8 || $jam_mulai_int >= 23) {
+            return back()->with('error', 'Jam mulai harus antara 08:00 hingga 22:00.');
         }
 
         // 3. Validasi tidak bisa booking jam yang sudah lewat hari ini
@@ -53,16 +54,22 @@ class BookingController extends Controller
             }
         }
 
-        // 4. Hitung jam selesai
-        $jam_mulai   = $request->jam_mulai;
-        $menit       = $request->durasi * 60;
-        $jam_selesai = date('H:i', strtotime($jam_mulai . " + {$menit} minutes"));
+        // 4. Hitung jam selesai — gunakan Carbon agar tidak wrap ke hari berikutnya
+        $jam_mulai      = $request->jam_mulai;
+        $durasi         = (int) $request->durasi;
+        $baseDate       = '2000-01-01'; // tanggal dummy, hanya untuk hitung selisih jam
+        $jamMulaiTs     = strtotime("{$baseDate} {$jam_mulai}");
+        $jamSelesaiTs   = $jamMulaiTs + ($durasi * 3600);
+        $jam_selesai    = date('H:i', $jamSelesaiTs);
+        $jamSelesaiInt  = (int) date('H', $jamSelesaiTs);
+        $menitSelesaiInt = (int) date('i', $jamSelesaiTs);
 
-        // 5. Validasi jam selesai tidak melebihi jam operasional
-        $jam_selesai_int   = (int) date('H', strtotime($jam_selesai));
-        $menit_selesai_int = (int) date('i', strtotime($jam_selesai));
-        if ($jam_selesai_int > 23 || ($jam_selesai_int == 23 && $menit_selesai_int > 0)) {
-            return back()->with('error', 'Jadwal melebihi jam operasional. Maksimal selesai pukul 23:00.');
+        // 5. Validasi jam selesai tidak melebihi 23:00
+        // Edge case: jam 22:00 + 2 jam = 00:00 (wrap) — ditangkap lewat timestamp
+        $batasSelesaiTs = strtotime("{$baseDate} 23:00");
+        if ($jamSelesaiTs > $batasSelesaiTs || ($jamSelesaiInt === 23 && $menitSelesaiInt > 0)) {
+            $maksimalDurasi = (int) floor(($batasSelesaiTs - $jamMulaiTs) / 3600);
+            return back()->with('error', "Jadwal melebihi jam operasional. Untuk jam mulai {$jam_mulai}, durasi maksimal adalah {$maksimalDurasi} jam (selesai pukul 23:00).");
         }
 
         // =====================================================================================
