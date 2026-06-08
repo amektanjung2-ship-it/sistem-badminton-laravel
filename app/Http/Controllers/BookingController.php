@@ -47,7 +47,6 @@ class BookingController extends Controller
         }
 
         // 3. Validasi tidak bisa booking jam yang sudah lewat hari ini
-        date_default_timezone_set('Asia/Jakarta');
         if ($request->tanggal_main == date('Y-m-d')) {
             if ($request->jam_mulai <= date('H:i')) {
                 return back()->with('error', 'Waktu tersebut sudah berlalu! Silakan pilih jam yang belum terlewat.');

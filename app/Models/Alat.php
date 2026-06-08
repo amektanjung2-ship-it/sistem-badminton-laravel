@@ -41,7 +41,6 @@ class Alat extends Model
             return 0;
         }
 
-        date_default_timezone_set('Asia/Jakarta');
         $tanggal_sekarang = date('Y-m-d');
         $waktu_sekarang = date('H:i');
 
