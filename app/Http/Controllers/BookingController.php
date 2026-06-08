@@ -206,4 +206,32 @@ class BookingController extends Controller
 
         return response()->json(['terpakai' => $terpakai]);
     }
+
+    // Pembatalan Booking oleh Pelanggan
+    public function batalkan(Booking $booking)
+    {
+        // Keamanan 1: Pastikan booking milik user yang sedang login
+        if ($booking->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak berhak membatalkan booking ini.');
+        }
+
+        // Keamanan 2: Hanya booking berstatus pending yang boleh dibatalkan
+        if ($booking->status_pembayaran !== 'pending') {
+            return redirect()->route('dashboard')
+                ->with('error', 'Hanya booking dengan status Menunggu Verifikasi yang dapat dibatalkan.');
+        }
+
+        // Kembalikan stok alat bertipe "Beli" jika ada
+        foreach ($booking->bookingAlats as $item) {
+            $alat = Alat::find($item->alat_id);
+            if ($alat && strtolower($alat->jenis_transaksi) == 'beli') {
+                $alat->increment('stok', $item->jumlah);
+            }
+        }
+
+        $booking->update(['status_pembayaran' => 'batal']);
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Booking berhasil dibatalkan.');
+    }
 }

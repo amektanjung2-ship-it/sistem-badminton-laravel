@@ -32,6 +32,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Rute Booking Lapangan
     Route::get('/booking/{lapangan}', [BookingController::class, 'create'])->name('booking.create');
     Route::post('/booking/{lapangan}', [BookingController::class, 'store'])->name('booking.store');
+
+    // Batalkan Booking oleh Pelanggan (hanya untuk status pending)
+    Route::patch('/booking/{booking}/batalkan', [BookingController::class, 'batalkan'])->name('booking.batalkan');
 });
 
 // Cek Jadwal (API)

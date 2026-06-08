@@ -152,6 +152,18 @@
                                         <div class="flex flex-col items-center justify-center space-y-3">
                                             @if($booking->status_pembayaran == 'pending')
                                                 <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-3 py-1 rounded-full border border-amber-200 uppercase tracking-wide">Menunggu Verifikasi</span>
+                                                <div class="mt-2">
+                                                    <form action="{{ route('booking.batalkan', $booking->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan booking ini? Tindakan ini tidak dapat diurungkan.')">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit" class="flex items-center justify-center gap-1.5 bg-white border border-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 text-red-600 text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm transition-all duration-200">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                            </svg>
+                                                            Batalkan
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             @elseif($booking->status_pembayaran == 'lunas')
                                                 <span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-200 uppercase tracking-wide">Lunas</span>
                                                 <div class="mt-1">
