@@ -24,7 +24,7 @@
         </div>
 
         <div class="mb-6">
-            <p><strong>Nama Pemesan:</strong> {{ $booking->user->name }}</p>
+            <p><strong>Nama Pemesan:</strong> {{ $booking->nama_pemesan ?? $booking->user->name }}</p>
             <p><strong>Lapangan:</strong> {{ $booking->lapangan->nama_lapangan }}</p>
             <p><strong>Jadwal:</strong> {{ \Carbon\Carbon::parse($booking->tanggal_main)->format('d F Y') }} ({{ \Carbon\Carbon::parse($booking->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->jam_selesai)->format('H:i') }})</p>
         </div>

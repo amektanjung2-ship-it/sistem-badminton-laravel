@@ -18,7 +18,9 @@
 
             @if (session('error'))
             <div class="p-4 mb-6 text-sm text-red-800 rounded-xl bg-red-50 border-l-4 border-red-500 shadow-sm flex items-start gap-3">
-                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
                 <div>
                     <span class="font-bold block mb-0.5">Peringatan Sistem</span>
                     {{ session('error') }}
@@ -31,7 +33,7 @@
                     @csrf
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        
+
                         {{-- BAGIAN KIRI: WAKTU SEWA --}}
                         <div>
                             <h3 class="text-lg font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3 flex items-center gap-2">
@@ -47,20 +49,20 @@
 
                                 <div>
                                     <label class="block text-gray-700 font-bold text-sm mb-3">Jam Mulai</label>
-                                    
+
                                     {{-- Input tersembunyi untuk menampung data yang akan dikirim ke backend --}}
                                     <input type="hidden" name="jam_mulai" id="jamMulaiFinal" required>
-                                    
+
                                     {{-- Grid Tombol Slot Waktu --}}
                                     <div class="grid grid-cols-4 sm:grid-cols-5 gap-2" id="wadahSlotWaktu">
                                         @for ($i = 8; $i <= 22; $i++)
-                                            @php $jam = sprintf('%02d:00', $i); @endphp
-                                            <button type="button" 
-                                                    class="tombol-waktu py-2 px-1 border border-gray-300 rounded-lg text-sm font-bold text-gray-600 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all focus:outline-none"
-                                                    data-waktu="{{ $jam }}">
-                                                {{ $jam }}
+                                            @php $jam=sprintf('%02d:00', $i); @endphp
+                                            <button type="button"
+                                            class="tombol-waktu py-2 px-1 border border-gray-300 rounded-lg text-sm font-bold text-gray-600 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all focus:outline-none"
+                                            data-waktu="{{ $jam }}">
+                                            {{ $jam }}
                                             </button>
-                                        @endfor
+                                            @endfor
                                     </div>
                                     <p class="text-[11px] text-gray-500 mt-2.5">*Silakan klik salah satu blok jam di atas.</p>
                                 </div>
@@ -115,6 +117,15 @@
                         </div>
                     </div>
 
+                    {{-- JIKA ADMIN: ISI NAMA PEMESAN --}}
+                    @if(auth()->user() && auth()->user()->role === 'admin')
+                    <div class="mt-6">
+                        <label class="block text-gray-700 font-bold text-sm mb-2" for="nama_pemesan">Nama Pemesan (bila memesan untuk pelanggan lain)</label>
+                        <input type="text" id="nama_pemesan" name="nama_pemesan" maxlength="255" class="w-full border-gray-300 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 shadow-sm transition-colors" placeholder="Contoh: Tarakhan">
+                        <p class="text-[11px] text-gray-500 mt-1.5">Opsional: isi nama pelanggan jika Anda memesan atas nama orang lain.</p>
+                    </div>
+                    @endif
+
                     {{-- TOMBOL SUBMIT --}}
                     <div class="flex justify-end gap-3 mt-10 bg-slate-50 -mx-6 -mb-6 md:-mx-8 md:-mb-8 p-6 md:p-8 rounded-b-2xl border-t border-gray-200">
                         <a href="{{ route('dashboard') }}" class="bg-white border border-gray-300 text-gray-700 font-bold py-2.5 px-6 rounded-xl hover:bg-gray-100 transition shadow-sm flex items-center">
@@ -122,7 +133,9 @@
                         </a>
                         <button type="submit" class="bg-emerald-600 text-white font-bold py-2.5 px-8 rounded-xl shadow-md hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-200 transition flex items-center gap-2">
                             Proses Pemesanan
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
                         </button>
                     </div>
                 </form>
@@ -135,7 +148,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const inputTanggal = document.getElementById('inputTanggal');
             const gridKalender = document.getElementById('gridKalender');
-            const lapanganId = "{{ $lapangan->id }}"; 
+            const lapanganId = "{{ $lapangan->id }}";
 
             // --- 1. LOGIKA TOMBOL SLOT WAKTU ---
             const tombolWaktu = document.querySelectorAll('.tombol-waktu');
@@ -167,7 +180,7 @@
                     .then(response => response.json())
                     .then(data => {
                         const jamTerpakai = data.terpakai;
-                        gridKalender.innerHTML = ''; 
+                        gridKalender.innerHTML = '';
 
                         if (jamTerpakai.length === 0) {
                             gridKalender.innerHTML = `
@@ -176,7 +189,7 @@
                                     <span class="font-bold text-sm block">Seluruh Slot Tersedia</span>
                                 </div>
                             `;
-                            return; 
+                            return;
                         }
 
                         jamTerpakai.forEach(jadwal => {
@@ -200,7 +213,7 @@
 
             // Memicu sinkronisasi saat tanggal diubah
             inputTanggal.addEventListener('change', muatJadwal);
-            
+
             // Memicu sinkronisasi pertama kali halaman dimuat
             muatJadwal();
         });

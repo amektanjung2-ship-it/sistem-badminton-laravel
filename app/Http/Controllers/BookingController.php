@@ -32,6 +32,7 @@ class BookingController extends Controller
         $request->validate([
             'tanggal_main' => 'required|date|after_or_equal:today',
             'jam_mulai'    => 'required',
+            'nama_pemesan' => 'nullable|string|max:255',
             'durasi'       => 'required|numeric|min:1|max:10', // Diubah minimal 1 jam sesuai UI baru
         ], [
             'tanggal_main.after_or_equal' => 'Tidak bisa memesan untuk hari yang sudah lewat!',
@@ -147,6 +148,7 @@ class BookingController extends Controller
             $booking = Booking::create([
                 'user_id'           => Auth::id(),
                 'lapangan_id'       => $lapanganLocked->id,
+                'nama_pemesan'      => $request->input('nama_pemesan'),
                 'tanggal_main'      => $request->tanggal_main,
                 'jam_mulai'         => $jam_mulai,
                 'jam_selesai'       => $jam_selesai,

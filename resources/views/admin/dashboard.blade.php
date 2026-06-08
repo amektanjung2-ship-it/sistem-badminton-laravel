@@ -138,6 +138,12 @@
                                     {{-- PERBAIKAN BUG NULLSAFE OPERATOR DI SINI (?->) --}}
                                     <div class="font-bold text-gray-900 text-sm">{{ $booking->user?->name ?? 'Pengguna Terhapus' }}</div>
                                     <div class="text-xs text-gray-500 mt-0.5">{{ $booking->user?->email ?? '-' }}</div>
+                                    @if($booking->nama_pemesan)
+                                    <div class="text-xs text-gray-600 mt-2">
+                                        <span class="font-semibold">Nama Pesanan:</span>
+                                        <span>{{ $booking->nama_pemesan }}</span>
+                                    </div>
+                                    @endif
                                 </td>
                                 <td class="py-4 px-5 font-bold text-sm text-gray-800">
                                     {{-- PERBAIKAN BUG NULLSAFE OPERATOR DI SINI (?->) --}}
@@ -210,8 +216,8 @@
             if (!canvas) return;
 
             const ctx = canvas.getContext('2d');
-            const labels = <?php echo json_encode($labels); ?>;
-            const dataPendapatan = <?php echo json_encode($data); ?>;
+            const labels = @json($labels);
+            const dataPendapatan = @json($data);
 
             new Chart(ctx, {
                 type: 'line',
