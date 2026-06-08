@@ -154,12 +154,52 @@
             const tombolWaktu = document.querySelectorAll('.tombol-waktu');
             const inputJamTersembunyi = document.getElementById('jamMulaiFinal');
 
+            // Fungsi untuk update tampilan tombol berdasarkan tanggal yang dipilih
+            function updateTombolJam() {
+                const tanggalPilihan = inputTanggal.value;
+                const hariIni = new Date().toISOString().split('T')[0];
+                const jamSekarang = new Date().getHours() * 60 + new Date().getMinutes(); // menit dari tengah malam
+
+                tombolWaktu.forEach(tombol => {
+                    const waktu = tombol.getAttribute('data-waktu'); // format "HH:00"
+                    const jamTombol = parseInt(waktu.split(':')[0]) * 60; // konversi ke menit
+
+                    const sudahLewat = (tanggalPilihan === hariIni) && (jamTombol <= jamSekarang);
+
+                    if (sudahLewat) {
+                        // Gaya jam yang sudah lewat: merah, tidak bisa diklik
+                        tombol.disabled = true;
+                        tombol.classList.remove('border-gray-300', 'text-gray-600', 'hover:border-emerald-500', 'hover:text-emerald-600', 'hover:bg-emerald-50', 'bg-emerald-600', 'text-white', 'border-emerald-600', 'shadow-md', 'bg-transparent');
+                        tombol.classList.add('bg-red-50', 'border-red-300', 'text-red-400', 'cursor-not-allowed', 'opacity-70');
+                        // Hapus seleksi jika jam ini sebelumnya dipilih
+                        if (inputJamTersembunyi.value === waktu) {
+                            inputJamTersembunyi.value = '';
+                        }
+                    } else {
+                        // Reset ke gaya normal
+                        tombol.disabled = false;
+                        tombol.classList.remove('bg-red-50', 'border-red-300', 'text-red-400', 'cursor-not-allowed', 'opacity-70');
+                        tombol.classList.add('border-gray-300', 'text-gray-600', 'hover:border-emerald-500', 'hover:text-emerald-600', 'hover:bg-emerald-50');
+                    }
+                });
+            }
+
+            // Jalankan saat halaman pertama dimuat
+            updateTombolJam();
+
+            // Jalankan ulang saat tanggal diubah
+            inputTanggal.addEventListener('change', updateTombolJam);
+
             tombolWaktu.forEach(tombol => {
                 tombol.addEventListener('click', function() {
-                    // Hapus status aktif dari semua tombol
+                    if (this.disabled) return; // Abaikan klik pada jam yang sudah lewat
+
+                    // Hapus status aktif dari semua tombol yang tidak disabled
                     tombolWaktu.forEach(btn => {
-                        btn.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-600', 'shadow-md');
-                        btn.classList.add('text-gray-600', 'border-gray-300', 'bg-transparent');
+                        if (!btn.disabled) {
+                            btn.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-600', 'shadow-md');
+                            btn.classList.add('text-gray-600', 'border-gray-300', 'bg-transparent');
+                        }
                     });
 
                     // Tambahkan status aktif ke tombol yang diklik
