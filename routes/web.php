@@ -37,8 +37,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/booking/{booking}/batalkan', [BookingController::class, 'batalkan'])->name('booking.batalkan');
 });
 
-// Cek Jadwal (API)
-Route::get('/api/jadwal/{lapangan}', [BookingController::class, 'cekJadwal'])->name('api.jadwal');
+// Cek Jadwal (API) — dibatasi 60 request per menit per IP agar tidak bisa dispam
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/api/jadwal/{lapangan}', [BookingController::class, 'cekJadwal'])->name('api.jadwal');
+});
 
 // Profil Pengguna (Bawaan Laravel Breeze)
 Route::middleware('auth')->group(function () {
