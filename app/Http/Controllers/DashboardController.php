@@ -32,14 +32,29 @@ class DashboardController extends Controller
         $totalPengeluaranLunas = Booking::where('user_id', Auth::id())
             ->where('status_pembayaran', 'lunas')
             ->sum('total_harga');
-            
+
+        // Hitung persentase & sisa — selesaikan di controller agar blade bersih
+        $targetTransaksi    = 10;
+        $targetPengeluaran  = 300000;
+        $pctTransaksi       = min(100, (int) round(($totalTransaksiLunas / $targetTransaksi) * 100));
+        $pctPengeluaran     = min(100, (int) round(($totalPengeluaranLunas / $targetPengeluaran) * 100));
+        $sisaTransaksi      = max(0, $targetTransaksi - $totalTransaksiLunas);
+        $sisaPengeluaran    = max(0, $targetPengeluaran - $totalPengeluaranLunas);
+
+
         // Mengirim data ke view dashboard.blade.php
         return view('dashboard', compact(
-            'lapangans', 
-            'alats', 
+            'lapangans',
+            'alats',
             'riwayat_bookings',
             'totalTransaksiLunas',
-            'totalPengeluaranLunas'
+            'totalPengeluaranLunas',
+            'targetTransaksi',
+            'targetPengeluaran',
+            'pctTransaksi',
+            'pctPengeluaran',
+            'sisaTransaksi',
+            'sisaPengeluaran'
         ));
     }
 

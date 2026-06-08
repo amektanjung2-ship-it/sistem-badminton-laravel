@@ -49,14 +49,7 @@
 
             @else
             {{-- BELUM VIP: TAMPILKAN PROGRESS BAR --}}
-            @php
-                $targetTransaksi  = 10;
-                $targetPengeluaran = 300000;
-                $pctTransaksi     = min(100, round(($totalTransaksiLunas / $targetTransaksi) * 100));
-                $pctPengeluaran   = min(100, round(($totalPengeluaranLunas / $targetPengeluaran) * 100));
-                $sisaTransaksi    = max(0, $targetTransaksi - $totalTransaksiLunas);
-                $sisaPengeluaran  = max(0, $targetPengeluaran - $totalPengeluaranLunas);
-            @endphp
+
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center gap-3 mb-5">
                     <div class="bg-amber-50 rounded-xl p-2.5 border border-amber-100">
@@ -80,10 +73,9 @@
                                 {{ $totalTransaksiLunas }} / {{ $targetTransaksi }}x
                             </span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <div class="h-3 rounded-full transition-all duration-500 {{ $pctTransaksi >= 100 ? 'bg-emerald-500' : 'bg-amber-400' }}"
-                                 style="width: {{ $pctTransaksi }}%"></div>
-                        </div>
+                        <meter value="{{ $pctTransaksi }}" min="0" max="100"
+                            class="w-full h-3 rounded-full"
+                            title="{{ $pctTransaksi }}%"></meter>
                         <p class="text-[11px] text-gray-500 mt-2">
                             @if($sisaTransaksi > 0)
                                 Kurang <span class="font-bold text-gray-700">{{ $sisaTransaksi }}x</span> transaksi lagi
@@ -101,10 +93,9 @@
                                 Rp {{ number_format($totalPengeluaranLunas, 0, ',', '.') }}
                             </span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                            <div class="h-3 rounded-full transition-all duration-500 {{ $pctPengeluaran >= 100 ? 'bg-emerald-500' : 'bg-blue-400' }}"
-                                 style="width: {{ $pctPengeluaran }}%"></div>
-                        </div>
+                        <meter value="{{ $pctPengeluaran }}" min="0" max="100"
+                            class="w-full h-3 rounded-full"
+                            title="{{ $pctPengeluaran }}%"></meter>
                         <p class="text-[11px] text-gray-500 mt-2">
                             @if($sisaPengeluaran > 0)
                                 Kurang <span class="font-bold text-gray-700">Rp {{ number_format($sisaPengeluaran, 0, ',', '.') }}</span> lagi
