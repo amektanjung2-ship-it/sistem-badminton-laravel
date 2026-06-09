@@ -221,6 +221,17 @@
                                         <div class="flex flex-col items-center justify-center space-y-3">
                                             @if($booking->status_pembayaran == 'pending')
                                                 <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-3 py-1 rounded-full border border-amber-200 uppercase tracking-wide">Menunggu Verifikasi</span>
+                                                
+                                                {{-- INTEGRASI TOMBOL BAYAR MIDTRANS SNAP --}}
+                                                <div class="w-full text-center">
+                                                    <a href="{{ route('booking.pembayaran', $booking->id) }}" class="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm transition-all duration-200">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                        </svg>
+                                                        Bayar Sekarang
+                                                    </a>
+                                                </div>
+
                                                 <div class="mt-2">
                                                     <form action="{{ route('booking.batalkan', $booking->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan booking ini? Tindakan ini tidak dapat diurungkan.')">
                                                         @csrf
