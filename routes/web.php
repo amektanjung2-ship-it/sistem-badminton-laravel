@@ -1,14 +1,17 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\BookingController;
 use App\Http\Controllers\AdminController;
-use App\Http\Middleware\IsAdmin;
-use App\Http\Controllers\Admin\LapanganController;
 use App\Http\Controllers\Admin\AlatController;
-use App\Models\Lapangan; // Pemanggilan model Lapangan untuk halaman beranda
+use App\Http\Controllers\Admin\LapanganController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Middleware\EnsureNoWaIsFilled;
+use App\Http\Middleware\IsAdmin; // Disatukan di atas
+use App\Models\Lapangan;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+// Disatukan di atas
 
 // ==========================================
 // RUTE HALAMAN UTAMA (LANDING PAGE)
@@ -20,11 +23,39 @@ Route::get('/', function () {
 });
 
 // ==========================================
-// RUTE PELANGGAN BIASA (BUTUH LOGIN)
+// RUTE KHUSUS PENGISIAN NOMOR HP (PENGGUNA LAMA)
 // ==========================================
-Route::middleware(['auth', 'verified'])->group(function () {
+// Harus bisa diakses saat login tapi nomor WA masih kosong di database
+Route::middleware(['auth'])->group(function () {
+    Route::get('/lengkapi-profil', function () {
+        // PERBAIKAN: Mengubah nomor_telepon menjadi no_hp sesuai properti Model User Anda
+        if (! empty(Auth::user()->no_hp)) {
+            return redirect()->route('dashboard'); // Kalau sudah ada no WA, langsung balikkan ke dashboard
+        }
+        return view('auth.lengkapi-profil');
+    })->name('profil.lengkapi');
+
+    Route::post('/lengkapi-profil', function (\Illuminate\Http\Request $request) {
+        $request->validate([
+            'no_hp' => ['required', 'string', 'max:15', 'unique:users,no_hp,' . Auth::id()],
+        ]);
+
+        $user        = Auth::user();
+        $user->no_hp = $request->no_hp; // Dipastikan menggunakan no_hp
+        $user->save();
+
+        return redirect()->route('dashboard')->with('success', 'Nomor WhatsApp berhasil diperbarui!');
+    })->name('profil.update-nomor');
+});
+
+// ==========================================
+// RUTE PELANGGAN BIASA (WAJIB LOGIN & ISI WA)
+// ==========================================
+Route::middleware(['auth', 'verified', EnsureNoWaIsFilled::class])->group(function () {
+
+    // Halaman Utama Dashboard Pelanggan
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Tiket & Laporan Pelanggan
     Route::get('/tiket/{booking}', [DashboardController::class, 'cetakTiket'])->name('cetak.tiket');
     Route::get('/tiket/download/{booking}', [DashboardController::class, 'downloadPdf'])->name('tiket.pdf');
@@ -53,15 +84,15 @@ Route::middleware('auth')->group(function () {
 // RUTE KHUSUS ADMIN (DILINDUNGI MIDDLEWARE)
 // ==========================================
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // Dashboard Admin
     Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
-    
+
     // Daftar Pelanggan & Tombol Member (Fix Prefix)
     Route::get('/pelanggan', [AdminController::class, 'daftarPelanggan'])->name('pelanggan');
     Route::patch('/pelanggan/{id}/member', [AdminController::class, 'toggleMember'])->name('pelanggan.member');
-    
-    // Laporan Keuangan
+
+    // Laporan Keuangan & Update Status Booking
     Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan');
     Route::get('/laporan/pdf', [AdminController::class, 'downloadLaporanPDF'])->name('laporan.pdf');
     Route::patch('/booking/{booking}/status', [AdminController::class, 'updateStatus'])->name('booking.updateStatus');
