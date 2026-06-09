@@ -7,11 +7,11 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\EnsureNoWaIsFilled;
-use App\Http\Middleware\IsAdmin; // Disatukan di atas
+use App\Http\Middleware\IsAdmin;
+use App\Http\Controllers\PaymentController;
 use App\Models\Lapangan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-// Disatukan di atas
 
 // ==========================================
 // RUTE HALAMAN UTAMA (LANDING PAGE)
@@ -64,6 +64,9 @@ Route::middleware(['auth', 'verified', EnsureNoWaIsFilled::class])->group(functi
     Route::get('/booking/{lapangan}', [BookingController::class, 'create'])->name('booking.create');
     Route::post('/booking/{lapangan}', [BookingController::class, 'store'])->name('booking.store');
 
+    // RUTE BARU: Memproses link pembayaran Midtrans Snap
+    Route::get('/booking/pembayaran/{id}', [BookingController::class, 'buatTagihanPembayaran'])->name('booking.pembayaran');
+
     // Batalkan Booking oleh Pelanggan (hanya untuk status pending)
     Route::patch('/booking/{booking}/batalkan', [BookingController::class, 'batalkan'])->name('booking.batalkan');
 });
@@ -113,5 +116,7 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     Route::put('/alat/{alat}', [AlatController::class, 'update'])->name('alat.update');
     Route::delete('/alat/{alat}', [AlatController::class, 'destroy'])->name('alat.destroy');
 });
+
+Route::get('/checkout', [PaymentController::class, 'checkout']);
 
 require __DIR__ . '/auth.php';

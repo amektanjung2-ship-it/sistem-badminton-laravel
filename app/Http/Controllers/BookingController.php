@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Alat;
@@ -10,6 +9,9 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; // WAJIB DITAMBAHKAN UNTUK TRANSAKSI DATABASE
 use Illuminate\Support\Facades\DB;
+use Midtrans\Config; // SEKARANG SUDAH BERGABUNG DI ATAS
+use Midtrans\Snap;
+// SEKARANG SUDAH BERGABUNG DI ATAS
 
 class BookingController extends Controller
 {
@@ -203,7 +205,7 @@ class BookingController extends Controller
             // 1. OTOMATIS KIRIM EMAIL KE PELANGGAN
             // =====================================================================
             try {
-                if (!empty($booking->user->email)) {
+                if (! empty($booking->user->email)) {
                     \Illuminate\Support\Facades\Mail::to($booking->user->email)->send(new \App\Mail\BookingSuccessMail($booking));
                 }
             } catch (\Exception $e) {
@@ -216,18 +218,23 @@ class BookingController extends Controller
             // =====================================================================
             try {
                 $nomorTujuan = $booking->user->no_hp; // Menggunakan kolom 'no_hp' yang sinkron dengan data registrasi Anda
-                if (!empty($nomorTujuan)) {
+                if (! empty($nomorTujuan)) {
                     $totalBayarFormatted = number_format($booking->total_harga, 0, ',', '.');
                     $namaLapangan        = $lapanganLocked->nama_lapangan;
 
+                    // Membuat link menuju halaman pembayaran aplikasi secara dinamis
+                    $linkPembayaran = route('booking.pembayaran', $booking->id);
+
                     $pesanWa = "Halo *" . ($booking->nama_pemesan ?? $booking->user->name) . "*, booking lapangan berhasil! 🏸\n\n" .
-                               "Detail Rincian Booking:\n" .
-                               "▪️ Lapangan: " . $namaLapangan . "\n" .
-                               "▪️ Tanggal: " . $booking->tanggal_main . "\n" .
-                               "▪️ Jadwal Jam: " . $booking->jam_mulai . " s/d " . $booking->jam_selesai . " (" . $request->durasi . " Jam)\n" .
-                               "▪️ Total Bayar: Rp " . $totalBayarFormatted . "\n\n" .
-                               "Status booking Anda saat ini adalah *Pending* (Menunggu Verifikasi Pembayaran Admin). Terima kasih!";
-                               
+                    "Detail Rincian Booking:\n" .
+                    "▪️ Lapangan: " . $namaLapangan . "\n" .
+                    "▪️ Tanggal: " . \Carbon\Carbon::parse($booking->tanggal_main)->format('d M Y') . "\n" .
+                    "▪️ Jadwal Jam: " . $booking->jam_mulai . " s/d " . $booking->jam_selesai . " (" . $request->durasi . " Jam)\n" .
+                        "▪️ Total Bayar: Rp " . $totalBayarFormatted . "\n\n" .
+                        "Silakan klik link di bawah ini untuk melihat rincian barcode atau melakukan pembayaran langsung:\n" .
+                        $linkPembayaran . "\n\n" .
+                        "Status booking Anda saat ini adalah *Pending*. Terima kasih!";
+
                     // Panggil Whatsapp Service untuk menembak API Gateway Fonnte
                     $this->whatsappService->sendMessage($nomorTujuan, $pesanWa);
                 }
@@ -237,7 +244,7 @@ class BookingController extends Controller
 
             $pesan_diskon = Auth::user()->is_member ? ' (sudah termasuk diskon member 10%)' : '';
             return redirect()->route('dashboard')
-                ->with('success', "Booking berhasil! Total: Rp " . number_format($total, 0, ',', '.') . $pesan_diskon . ". Rincian telah dikirim ke WhatsApp.");
+                ->with('success', "Booking berhasil! Total: Rp " . number_format($total, 0, ',', '.') . $pesan_diskon . ". Rincian dan link pembayaran telah dikirim ke WhatsApp.");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -285,5 +292,85 @@ class BookingController extends Controller
 
         return redirect()->route('dashboard')
             ->with('success', 'Booking berhasil dibatalkan.');
+    }
+
+    // =====================================================================================
+    // FUNGSI LAMA: INTEGRASI MIDTRANS SNAP (TAMPA MENGUBAH LOGIKA LAMA)
+    // =====================================================================================
+    public function buatTagihanPembayaran($bookingId)
+    {
+        $booking = Booking::with('user')->findOrFail($bookingId);
+
+        // 1. Set Konfigurasi Midtrans dari file config
+        Config::$serverKey    = config('services.midtrans.server_key');
+        Config::$isProduction = config('services.midtrans.is_production');
+        Config::$isSanitized  = config('services.midtrans.is_sanitized');
+        Config::$is3ds        = config('services.midtrans.is_3ds');
+
+        // 2. Buat Parameter Transaksi
+        $params = [
+            'transaction_details' => [
+                'order_id'     => 'BOOK-' . $booking->id . '-' . time(), // Harus unik setiap request
+                'gross_amount' => $booking->total_harga,                 // Total biaya booking lapangan
+            ],
+            'customer_details'    => [
+                'first_name' => $booking->user->name,
+                'phone'      => $booking->user->no_hp, // Nomor HP pelanggan
+            ],
+        ];
+
+        try {
+            // 3. Dapatkan Snap Token dari Midtrans
+            $snapToken = Snap::getSnapToken($params);
+
+            // 4. Simpan snap token ke tabel booking di database Anda (opsional tapi disarankan)
+            $booking->update(['snap_token' => $snapToken]);
+
+            // 5. Lempar token ke halaman pembayaran/view blade Anda
+            return view('pages.pembayaran', compact('snapToken', 'booking'));
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
+        }
+    }
+
+    // =====================================================================================
+    // FUNGSI BARU DIKIRIMKAN: BERFUNGSI SEBAGAI ALTERNATIF ATAU TARGET ROUTE TERBARU Anda
+    // =====================================================================================
+    public function pembayaran($id)
+    {
+        $booking = Booking::with('lapangan')->findOrFail($id);
+
+        // Konfigurasi enkripsi Midtrans
+        Config::$serverKey    = config('midtrans.server_key');
+        Config::$isProduction = config('midtrans.is_production');
+        Config::$isSanitized  = true;
+        Config::$is3ds        = true;
+
+        // Buat parameter transaksi untuk dikirim ke Midtrans
+        $params = [
+            'transaction_details' => [
+                'order_id'     => 'BOOKING-' . $booking->id . '-' . time(),
+                'gross_amount' => (int) $booking->total_harga,
+            ],
+            'customer_details'    => [
+                'first_name' => auth()->user()->name,
+                'email'      => auth()->user()->email,
+            ],
+            'item_details'        => [
+                [
+                    'id'       => $booking->lapangan_id,
+                    'price'    => (int) $booking->total_harga,
+                    'quantity' => 1,
+                    'name'     => 'Sewa ' . $booking->lapangan->nama_lapangan,
+                ],
+            ],
+        ];
+
+        // Ambil Snap Token dari Midtrans
+        $snapToken = Snap::getSnapToken($params);
+
+        // Return ke view khusus pembayaran dengan membawa data booking dan snapToken
+        return view('booking.pembayaran', compact('booking', 'snapToken'));
     }
 }
