@@ -5,37 +5,45 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Lapangan;
+use Illuminate\Support\Facades\Storage;
 
 class LapanganController extends Controller
 {
-    // Menampilkan daftar lapangan
     public function index()
     {
         $lapangans = Lapangan::latest()->get();
         return view('admin.lapangan.index', compact('lapangans'));
     }
 
-    // Menampilkan form tambah lapangan
     public function create()
     {
         return view('admin.lapangan.create');
     }
 
-    // Menyimpan data lapangan baru ke database
     public function store(Request $request)
     {
-        // Validasi inputan
         $request->validate([
             'nama_lapangan' => 'required|string|max:255',
             'harga_per_jam' => 'required|numeric|min:0',
-            'status_aktif' => 'required|boolean',
+            'status_aktif'  => 'required|boolean',
+            'foto'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format gambar harus jpg, jpeg, png, atau webp.',
+            'foto.max'   => 'Ukuran gambar maksimal 2MB.',
         ]);
 
-        // Simpan ke database
+        $pathFoto = null;
+        if ($request->hasFile('foto')) {
+            // Simpan ke storage/app/public/lapangan/
+            $pathFoto = $request->file('foto')->store('lapangan', 'public');
+        }
+
         Lapangan::create([
             'nama_lapangan' => $request->nama_lapangan,
+            'foto'          => $pathFoto,
             'harga_per_jam' => $request->harga_per_jam,
-            'status_aktif' => $request->status_aktif,
+            'status_aktif'  => $request->status_aktif,
         ]);
 
         return redirect()->route('admin.lapangan.index')->with('success', 'Lapangan baru berhasil ditambahkan!');
@@ -46,28 +54,52 @@ class LapanganController extends Controller
         return view('admin.lapangan.edit', compact('lapangan'));
     }
 
-    // Menyimpan perubahan data lapangan ke database
     public function update(Request $request, Lapangan $lapangan)
     {
         $request->validate([
             'nama_lapangan' => 'required|string|max:255',
             'harga_per_jam' => 'required|numeric|min:0',
-            'status_aktif' => 'required|boolean',
+            'status_aktif'  => 'required|boolean',
+            'foto'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ], [
+            'foto.image' => 'File harus berupa gambar.',
+            'foto.mimes' => 'Format gambar harus jpg, jpeg, png, atau webp.',
+            'foto.max'   => 'Ukuran gambar maksimal 2MB.',
         ]);
+
+        $pathFoto = $lapangan->foto; // Pertahankan foto lama jika tidak upload baru
+
+        if ($request->hasFile('foto')) {
+            // Hapus foto lama dari storage sebelum simpan yang baru
+            if ($lapangan->foto) {
+                Storage::disk('public')->delete($lapangan->foto);
+            }
+            $pathFoto = $request->file('foto')->store('lapangan', 'public');
+        }
+
+        // Hapus foto jika admin centang "hapus foto"
+        if ($request->boolean('hapus_foto') && $lapangan->foto) {
+            Storage::disk('public')->delete($lapangan->foto);
+            $pathFoto = null;
+        }
 
         $lapangan->update([
             'nama_lapangan' => $request->nama_lapangan,
+            'foto'          => $pathFoto,
             'harga_per_jam' => $request->harga_per_jam,
-            'status_aktif' => $request->status_aktif,
+            'status_aktif'  => $request->status_aktif,
         ]);
 
         return redirect()->route('admin.lapangan.index')->with('success', 'Data lapangan berhasil diperbarui!');
     }
 
-    // Menghapus data lapangan dari database
     public function destroy(Lapangan $lapangan)
     {
+        // Hapus foto dari storage saat lapangan dihapus
+        if ($lapangan->foto) {
+            Storage::disk('public')->delete($lapangan->foto);
+        }
         $lapangan->delete();
-        return redirect()->route('admin.lapangan.index')->with('success', 'Data lapangan berhasil dihapus secara permanen!');
+        return redirect()->route('admin.lapangan.index')->with('success', 'Data lapangan berhasil dihapus!');
     }
 }
