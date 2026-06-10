@@ -2,19 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Lapangan;
 use App\Models\Alat;
 use App\Models\Booking;
 use App\Models\BookingAlat;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // WAJIB DITAMBAHKAN UNTUK TRANSAKSI DATABASE
+use App\Models\Lapangan;
+use App\Services\WhatsAppService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // WAJIB DITAMBAHKAN UNTUK TRANSAKSI DATABASE
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
+    protected $whatsappService;
+
+    // Constructor untuk menyuntikkan WhatsAppService ke Controller
+    public function __construct(WhatsAppService $whatsappService)
+    {
+        $this->whatsappService = $whatsappService;
+    }
+
     public function create(Lapangan $lapangan)
     {
-        if (!$lapangan->status_aktif) {
+        if (! $lapangan->status_aktif) {
             return redirect()->route('dashboard')->with('error', 'Maaf, lapangan ini sedang tidak aktif.');
         }
 
@@ -22,9 +31,12 @@ class BookingController extends Controller
         return view('booking.create', compact('lapangan', 'alats'));
     }
 
+    // =====================================================================================
+    // FUNGSI UTAMA (SUDAH DIGABUNG DENGAN NOTIFIKASI EMAIL DAN WHATSAPP)
+    // =====================================================================================
     public function store(Request $request, Lapangan $lapangan)
     {
-        if (!$lapangan->status_aktif) {
+        if (! $lapangan->status_aktif) {
             return redirect()->route('dashboard')->with('error', 'Maaf, lapangan ini sedang tidak aktif.');
         }
 
@@ -41,7 +53,6 @@ class BookingController extends Controller
         ]);
 
         // 2. Validasi jam mulai dalam operasional (08:00 - 22:00)
-        // Jam mulai maksimal 22:00 karena minimal main 1 jam, GOR tutup 23:00
         $jam_mulai_int = (int) date('H', strtotime($request->jam_mulai));
         if ($jam_mulai_int < 8 || $jam_mulai_int >= 23) {
             return back()->with('error', 'Jam mulai harus antara 08:00 hingga 22:00.');
@@ -54,35 +65,29 @@ class BookingController extends Controller
             }
         }
 
-        // 4. Hitung jam selesai — gunakan Carbon agar tidak wrap ke hari berikutnya
-        $jam_mulai      = $request->jam_mulai;
-        $durasi         = (int) $request->durasi;
-        $baseDate       = '2000-01-01'; // tanggal dummy, hanya untuk hitung selisih jam
-        $jamMulaiTs     = strtotime("{$baseDate} {$jam_mulai}");
-        $jamSelesaiTs   = $jamMulaiTs + ($durasi * 3600);
-        $jam_selesai    = date('H:i', $jamSelesaiTs);
-        $jamSelesaiInt  = (int) date('H', $jamSelesaiTs);
+        // 4. Hitung jam selesai
+        $jam_mulai       = $request->jam_mulai;
+        $durasi          = (int) $request->durasi;
+        $baseDate        = '2000-01-01';
+        $jamMulaiTs      = strtotime("{$baseDate} {$jam_mulai}");
+        $jamSelesaiTs    = $jamMulaiTs + ($durasi * 3600);
+        $jam_selesai     = date('H:i', $jamSelesaiTs);
+        $jamSelesaiInt   = (int) date('H', $jamSelesaiTs);
         $menitSelesaiInt = (int) date('i', $jamSelesaiTs);
 
         // 5. Validasi jam selesai tidak melebihi 23:00
-        // Edge case: jam 22:00 + 2 jam = 00:00 (wrap) — ditangkap lewat timestamp
         $batasSelesaiTs = strtotime("{$baseDate} 23:00");
         if ($jamSelesaiTs > $batasSelesaiTs || ($jamSelesaiInt === 23 && $menitSelesaiInt > 0)) {
             $maksimalDurasi = (int) floor(($batasSelesaiTs - $jamMulaiTs) / 3600);
             return back()->with('error', "Jadwal melebihi jam operasional. Untuk jam mulai {$jam_mulai}, durasi maksimal adalah {$maksimalDurasi} jam (selesai pukul 23:00).");
         }
 
-        // =====================================================================================
-        // MEMULAI ZONA AMAN (TRANSAKSI DATABASE & PESSIMISTIC LOCKING)
-        // =====================================================================================
         DB::beginTransaction();
 
         try {
-            // [KUNCI KEAMANAN]: Mengunci baris Lapangan ini di database. 
-            // Jika ada orang lain yang menekan tombol di milidetik yang sama, mereka harus antre di baris kode ini.
             $lapanganLocked = Lapangan::where('id', $lapangan->id)->lockForUpdate()->first();
 
-            // 6. Cek bentrok jadwal (Sekarang kebal dari serangan pemesanan bersamaan / Race Condition)
+            // 6. Cek bentrok jadwal
             $bentrok = Booking::where('lapangan_id', $lapanganLocked->id)
                 ->where('tanggal_main', $request->tanggal_main)
                 ->where('status_pembayaran', '!=', 'batal')
@@ -92,7 +97,7 @@ class BookingController extends Controller
                 })->exists();
 
             if ($bentrok) {
-                DB::rollBack(); // Batalkan antrean kunci
+                DB::rollBack();
                 return back()->with('error', 'Maaf! Lapangan sudah dipesan pada jam tersebut. Silakan pilih jam lain.');
             }
 
@@ -100,11 +105,14 @@ class BookingController extends Controller
             if ($request->has('alat')) {
                 foreach ($request->alat as $alat_id => $jumlah) {
                     $jumlah = (int) $jumlah;
-                    if ($jumlah <= 0) continue;
+                    if ($jumlah <= 0) {
+                        continue;
+                    }
 
-                    // Kita juga kunci data alatnya agar tidak ada yang menyewa barang yang sama bersamaan
                     $alat = Alat::where('id', $alat_id)->lockForUpdate()->first();
-                    if (!$alat) continue;
+                    if (! $alat) {
+                        continue;
+                    }
 
                     if ($alat->jenis_transaksi == 'Sewa') {
                         $terpakai = BookingAlat::join('bookings', 'booking_alats.booking_id', '=', 'bookings.id')
@@ -137,8 +145,11 @@ class BookingController extends Controller
             if ($request->has('alat')) {
                 foreach ($request->alat as $alat_id => $jumlah) {
                     $jumlah = (int) $jumlah;
-                    if ($jumlah <= 0) continue;
-                    $alat = Alat::find($alat_id);
+                    if ($jumlah <= 0) {
+                        continue;
+                    }
+
+                    $alat              = Alat::find($alat_id);
                     $total_harga_alat += $alat->harga_sewa * $jumlah;
                 }
             }
@@ -166,7 +177,9 @@ class BookingController extends Controller
             if ($request->has('alat')) {
                 foreach ($request->alat as $alat_id => $jumlah) {
                     $jumlah = (int) $jumlah;
-                    if ($jumlah <= 0) continue;
+                    if ($jumlah <= 0) {
+                        continue;
+                    }
 
                     $alat = Alat::find($alat_id);
 
@@ -183,15 +196,51 @@ class BookingController extends Controller
                 }
             }
 
-            // 12. Tutup Transaksi dan Permanenkan Data (Pelepasan Kunci)
+            // 12. Tutup Transaksi dan Permanenkan Data
             DB::commit();
+
+            // =====================================================================
+            // 1. OTOMATIS KIRIM EMAIL KE PELANGGAN
+            // =====================================================================
+            try {
+                if (!empty($booking->user->email)) {
+                    \Illuminate\Support\Facades\Mail::to($booking->user->email)->send(new \App\Mail\BookingSuccessMail($booking));
+                }
+            } catch (\Exception $e) {
+                // Log error jika email gagal dikirim agar aplikasi utama tidak ikut crash
+                \Illuminate\Support\Facades\Log::error('Gagal kirim email booking: ' . $e->getMessage());
+            }
+
+            // =====================================================================
+            // 2. OTOMATIS KIRIM WHATSAPP KE PELANGGAN via FONNTE
+            // =====================================================================
+            try {
+                $nomorTujuan = $booking->user->no_hp; // Menggunakan kolom 'no_hp' yang sinkron dengan data registrasi Anda
+                if (!empty($nomorTujuan)) {
+                    $totalBayarFormatted = number_format($booking->total_harga, 0, ',', '.');
+                    $namaLapangan        = $lapanganLocked->nama_lapangan;
+
+                    $pesanWa = "Halo *" . ($booking->nama_pemesan ?? $booking->user->name) . "*, booking lapangan berhasil! 🏸\n\n" .
+                               "Detail Rincian Booking:\n" .
+                               "▪️ Lapangan: " . $namaLapangan . "\n" .
+                               "▪️ Tanggal: " . $booking->tanggal_main . "\n" .
+                               "▪️ Jadwal Jam: " . $booking->jam_mulai . " s/d " . $booking->jam_selesai . " (" . $request->durasi . " Jam)\n" .
+                               "▪️ Total Bayar: Rp " . $totalBayarFormatted . "\n\n" .
+                               "Status booking Anda saat ini adalah *Pending* (Menunggu Verifikasi Pembayaran Admin). Terima kasih!";
+                               
+                    // Panggil Whatsapp Service untuk menembak API Gateway Fonnte
+                    $this->whatsappService->sendMessage($nomorTujuan, $pesanWa);
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Gagal kirim WA booking: ' . $e->getMessage());
+            }
 
             $pesan_diskon = Auth::user()->is_member ? ' (sudah termasuk diskon member 10%)' : '';
             return redirect()->route('dashboard')
-                ->with('success', "Booking berhasil! Total: Rp " . number_format($total, 0, ',', '.') . $pesan_diskon . ". Menunggu konfirmasi admin.");
+                ->with('success', "Booking berhasil! Total: Rp " . number_format($total, 0, ',', '.') . $pesan_diskon . ". Rincian telah dikirim ke WhatsApp.");
 
         } catch (\Exception $e) {
-            DB::rollBack(); // Jika terjadi sistem error (mati lampu, server down), batalkan semua!
+            DB::rollBack();
             return back()->with('error', 'Terjadi kendala pada server saat memproses pesanan Anda. Silakan coba beberapa saat lagi.');
         }
     }
@@ -216,18 +265,15 @@ class BookingController extends Controller
     // Pembatalan Booking oleh Pelanggan
     public function batalkan(Booking $booking)
     {
-        // Keamanan 1: Pastikan booking milik user yang sedang login
         if ($booking->user_id !== Auth::id()) {
             abort(403, 'Anda tidak berhak membatalkan booking ini.');
         }
 
-        // Keamanan 2: Hanya booking berstatus pending yang boleh dibatalkan
         if ($booking->status_pembayaran !== 'pending') {
             return redirect()->route('dashboard')
                 ->with('error', 'Hanya booking dengan status Menunggu Verifikasi yang dapat dibatalkan.');
         }
 
-        // Kembalikan stok alat bertipe "Beli" jika ada
         foreach ($booking->bookingAlats as $item) {
             $alat = Alat::find($item->alat_id);
             if ($alat && strtolower($alat->jenis_transaksi) == 'beli') {

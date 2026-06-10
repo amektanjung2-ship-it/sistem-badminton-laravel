@@ -42,36 +42,48 @@
                     </div>
 
                     {{-- TABEL DATA --}}
-                    <div class="overflow-x-auto rounded-xl border border-gray-200">
-                        <table class="min-w-full bg-white text-left">
-                            <thead class="bg-slate-50 border-b border-gray-200">
+                    <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                        <table class="min-w-full divide-y divide-gray-200 text-left text-sm bg-white">
+                            <thead class="bg-slate-50 text-xs uppercase font-bold text-gray-600 tracking-wider border-b border-gray-200">
                                 <tr>
-                                    <th class="py-4 px-5 text-xs font-bold text-gray-600 uppercase tracking-wider">Informasi Pengguna</th>
-                                    <th class="py-4 px-5 text-xs font-bold text-gray-600 uppercase tracking-wider">Tanggal Bergabung</th>
-                                    <th class="py-4 px-5 text-xs font-bold text-gray-600 uppercase tracking-wider">Status Akun</th>
-                                    <th class="py-4 px-5 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi Keanggotaan</th>
+                                    <th class="px-5 py-4">No</th>
+                                    <th class="px-5 py-4">Nama Pelanggan</th>
+                                    <th class="px-5 py-4">Alamat Email</th>
+                                    <th class="px-5 py-4">Nomor WhatsApp / HP</th>
+                                    <th class="px-5 py-4">Tanggal Daftar</th>
+                                    <th class="px-5 py-4">Status Akun</th>
+                                    <th class="px-5 py-4 text-center">Aksi Keanggotaan</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                {{-- Ganti $pelanggans dengan variabel yang Anda gunakan di Controller --}}
+                            <tbody class="divide-y divide-gray-100 bg-white">
                                 @forelse($pelanggans as $pelanggan)
                                 <tr class="hover:bg-slate-50 transition duration-150">
-                                    <td class="py-4 px-5">
-                                        <div class="font-bold text-gray-900 text-sm">{{ $pelanggan->name }}</div>
-                                        <div class="text-xs text-gray-500 mt-0.5">{{ $pelanggan->email }}</div>
+                                    <td class="px-5 py-4 whitespace-nowrap text-gray-600 font-medium">{{ $loop->iteration }}</td>
+                                    <td class="px-5 py-4 whitespace-nowrap font-bold text-gray-900">{{ $pelanggan->name }}</td>
+                                    <td class="px-5 py-4 whitespace-nowrap text-gray-500">{{ $pelanggan->email }}</td>
+                                    
+                                    {{-- Hanya Menampilkan Angka Nomor HP Biasa (Tanpa Link Chat WA) --}}
+                                    <td class="px-5 py-4 whitespace-nowrap text-gray-700 font-medium">
+                                        @if($pelanggan->no_hp)
+                                            {{ $pelanggan->no_hp }}
+                                        @else
+                                            <span class="text-gray-400 italic text-xs">Belum mengisi nomor</span>
+                                        @endif
                                     </td>
-                                    <td class="py-4 px-5 text-sm text-gray-700 font-medium">
+                                    
+                                    <td class="px-5 py-4 whitespace-nowrap text-gray-600 font-medium">
                                         {{ $pelanggan->created_at->format('d M Y') }}
                                     </td>
-                                    <td class="py-4 px-5">
-                                        {{-- Asumsi menggunakan field 'is_member' di database --}}
+                                    
+                                    <td class="px-5 py-4 whitespace-nowrap">
                                         @if($pelanggan->is_member)
                                             <span class="bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 text-[11px] font-bold px-3 py-1 rounded-full border border-amber-200 uppercase tracking-wide">Member VIP</span>
                                         @else
                                             <span class="bg-gray-100 text-gray-700 text-[11px] font-bold px-3 py-1 rounded-full border border-gray-200 uppercase tracking-wide">Reguler</span>
                                         @endif
                                     </td>
-                                    <td class="py-4 px-5 align-middle text-center">
+                                    
+                                    <td class="px-5 py-4 whitespace-nowrap text-center align-middle">
                                         <form action="{{ route('admin.pelanggan.member', $pelanggan->id) }}" method="POST" class="inline-block">
                                             @csrf
                                             @method('PATCH')
@@ -93,7 +105,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="4" class="py-12 text-center text-gray-500 font-medium">Belum ada data pengguna yang terdaftar di dalam sistem.</td>
+                                    <td colspan="7" class="py-12 text-center text-gray-500 font-medium">Belum ada data pengguna yang terdaftar di dalam sistem.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
