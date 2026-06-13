@@ -1,16 +1,45 @@
 <x-app-layout>
+    {{-- Slot Header Bawaan --}}
     <x-slot name="header">
         <h2 class="font-bold text-2xl text-emerald-800 leading-tight">
             {{ __('Dasbor Pelanggan') }}
         </h2>
     </x-slot>
 
-    <div class="py-12 bg-slate-50 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    {{-- Kustomisasi Style untuk Background Banner --}}
+    <style>
+        .badminton-hero {
+            position: relative;
+            background-image: linear-gradient(to bottom, rgba(6, 78, 59, 0.4), rgba(15, 23, 42, 0.95)), 
+                              url('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+
+    <div class="bg-slate-100 min-h-screen pb-12">
+        
+        {{-- HERO BANNER SECTION (Rancangan Atas dengan Background Badminton) --}}
+        <div class="badminton-hero pt-16 pb-28 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto text-white">
+                <span class="bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    Selamat Datang Kembali
+                </span>
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mt-3">
+                    Halo, {{ auth()->user()->name }}!
+                </h1>
+                <p class="text-slate-300 mt-2 max-w-xl text-sm md:text-base">
+                    Siap untuk menguasai lapangan hari ini? Cek status keanggotaan Anda dan pilih fasilitas terbaik di bawah.
+                </p>
+            </div>
+        </div>
+
+        {{-- KONTEN UTAMA (Menggunakan margin minus agar kartu status naik ke dalam area banner) --}}
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8 -mt-14 relative z-10 px-4">
 
             {{-- NOTIFIKASI SISTEM --}}
             @if(session('success'))
-            <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-xl shadow-sm mb-6 flex items-start">
+            <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-xl shadow-sm flex items-start">
                 <div class="flex-shrink-0 text-emerald-500 mt-0.5">
                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
@@ -26,7 +55,7 @@
             {{-- KARTU STATUS KEANGGOTAAN --}}
             @if(auth()->user()->is_member)
             {{-- SUDAH VIP --}}
-            <div class="bg-gradient-to-r from-amber-400 to-yellow-500 rounded-2xl shadow-md p-6 text-white">
+            <div class="bg-gradient-to-r from-amber-400 to-yellow-500 rounded-2xl shadow-lg p-6 text-white border border-amber-300/20">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <div class="bg-white/20 rounded-xl p-3 flex-shrink-0">
@@ -40,7 +69,7 @@
                             <p class="text-sm text-yellow-100 mt-1">Selamat! Anda menikmati diskon <span class="font-extrabold text-white">10%</span> untuk setiap transaksi.</p>
                         </div>
                     </div>
-                    <div class="bg-white/20 border border-white/30 rounded-xl px-5 py-3 text-center flex-shrink-0">
+                    <div class="bg-white/20 border border-white/30 rounded-xl px-5 py-3 text-center flex-shrink-0 w-full sm:w-auto">
                         <p class="text-xs font-bold text-yellow-100 uppercase tracking-wide">Total Transaksi</p>
                         <p class="text-3xl font-extrabold mt-0.5">{{ $totalTransaksiLunas }}x</p>
                     </div>
@@ -49,8 +78,7 @@
 
             @else
             {{-- BELUM VIP: TAMPILKAN PROGRESS BAR --}}
-
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
                 <div class="flex items-center gap-3 mb-5">
                     <div class="bg-amber-50 rounded-xl p-2.5 border border-amber-100">
                         <svg class="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -64,7 +92,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
                     {{-- PROGRESS: JUMLAH TRANSAKSI --}}
                     <div class="bg-slate-50 rounded-xl p-4 border border-gray-100">
                         <div class="flex justify-between items-center mb-2">
@@ -104,13 +131,12 @@
                             @endif
                         </p>
                     </div>
-
                 </div>
             </div>
             @endif
 
             {{-- BAGIAN: KATALOG LAPANGAN --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-gray-200">
+            <div class="bg-white overflow-hidden shadow-sm rounded-2xl border border-gray-200">
                 <div class="p-6 md:p-8">
                     <div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
                         <div class="p-2.5 bg-emerald-50 rounded-lg text-emerald-600 border border-emerald-100">
@@ -123,7 +149,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach($lapangans as $lapangan)
-                        <div class="group border border-gray-200 rounded-xl p-6 hover:border-emerald-500 hover:shadow-lg transition-all duration-300 bg-white relative flex flex-col justify-between overflow-hidden">
+                        <div class="group border border-gray-200 rounded-xl p-6 hover:border-emerald-500 hover:shadow-md transition-all duration-300 bg-white relative flex flex-col justify-between overflow-hidden">
                             <div>
                                 <h4 class="text-lg font-bold text-gray-900 mb-1">{{ $lapangan->nama_lapangan }}</h4>
                                 <p class="text-emerald-700 font-extrabold text-xl mt-2">
@@ -144,7 +170,7 @@
             </div>
 
             {{-- BAGIAN: INFORMASI INVENTARIS TAMBAHAN --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-gray-200">
+            <div class="bg-white overflow-hidden shadow-sm rounded-2xl border border-gray-200">
                 <div class="p-6 md:p-8">
                     <div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
                         <div class="p-2.5 bg-teal-50 rounded-lg text-teal-600 border border-teal-100">
@@ -177,7 +203,7 @@
             </div>
 
             {{-- BAGIAN: RIWAYAT TRANSAKSI --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-gray-200">
+            <div class="bg-white overflow-hidden shadow-sm rounded-2xl border border-gray-200">
                 <div class="p-6 md:p-8">
                     <div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
                         <div class="p-2.5 bg-blue-50 rounded-lg text-blue-600 border border-blue-100">
@@ -221,17 +247,6 @@
                                         <div class="flex flex-col items-center justify-center space-y-3">
                                             @if($booking->status_pembayaran == 'pending')
                                                 <span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-3 py-1 rounded-full border border-amber-200 uppercase tracking-wide">Menunggu Verifikasi</span>
-                                                
-                                                {{-- INTEGRASI TOMBOL BAYAR MIDTRANS SNAP --}}
-                                                <div class="w-full text-center">
-                                                    <a href="{{ route('booking.pembayaran', $booking->id) }}" class="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm transition-all duration-200">
-                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                                        </svg>
-                                                        Bayar Sekarang
-                                                    </a>
-                                                </div>
-
                                                 <div class="mt-2">
                                                     <form action="{{ route('booking.batalkan', $booking->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan booking ini? Tindakan ini tidak dapat diurungkan.')">
                                                         @csrf
@@ -249,7 +264,7 @@
                                                 <div class="mt-1">
                                                     <a href="{{ route('cetak.tiket', $booking->id) }}" target="_blank" class="flex items-center justify-center gap-1.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm transition-colors">
                                                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 022 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                                                         </svg>
                                                         Cetak Tiket
                                                     </a>
@@ -281,43 +296,28 @@
                     @if($riwayat_bookings->hasPages())
                     <div class="mt-5 flex justify-center">
                         <nav class="flex items-center gap-1">
-                            {{-- Tombol Sebelumnya --}}
                             @if($riwayat_bookings->onFirstPage())
-                                <span class="px-3 py-2 text-xs font-bold text-gray-300 bg-white border border-gray-200 rounded-lg cursor-not-allowed">
-                                    &laquo; Sebelumnya
-                                </span>
+                                <span class="px-3 py-2 text-xs font-bold text-gray-300 bg-white border border-gray-200 rounded-lg cursor-not-allowed">&laquo; Sebelumnya</span>
                             @else
-                                <a href="{{ $riwayat_bookings->previousPageUrl() }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">
-                                    &laquo; Sebelumnya
-                                </a>
+                                <a href="{{ $riwayat_bookings->previousPageUrl() }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">&laquo; Sebelumnya</a>
                             @endif
 
-                            {{-- Nomor Halaman --}}
                             @foreach($riwayat_bookings->getUrlRange(1, $riwayat_bookings->lastPage()) as $page => $url)
                                 @if($page == $riwayat_bookings->currentPage())
-                                    <span class="px-3 py-2 text-xs font-bold text-white bg-emerald-600 border border-emerald-600 rounded-lg">
-                                        {{ $page }}
-                                    </span>
+                                    <span class="px-3 py-2 text-xs font-bold text-white bg-emerald-600 border border-emerald-600 rounded-lg">{{ $page }}</span>
                                 @else
-                                    <a href="{{ $url }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">
-                                        {{ $page }}
-                                    </a>
+                                    <a href="{{ $url }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">{{ $page }}</a>
                                 @endif
                             @endforeach
 
-                            {{-- Tombol Berikutnya --}}
                             @if($riwayat_bookings->hasMorePages())
-                                <a href="{{ $riwayat_bookings->nextPageUrl() }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">
-                                    Berikutnya &raquo;
-                                </a>
+                                <a href="{{ $riwayat_bookings->nextPageUrl() }}" class="px-3 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors">Berikutnya &raquo;</a>
                             @else
-                                <span class="px-3 py-2 text-xs font-bold text-gray-300 bg-white border border-gray-200 rounded-lg cursor-not-allowed">
-                                    Berikutnya &raquo;
-                                </span>
+                                <span class="px-3 py-2 text-xs font-bold text-gray-300 bg-white border border-gray-200 rounded-lg cursor-not-allowed">Berikutnya &raquo;</span>
                             @endif
                         </nav>
                     </div>
-                    @endif
+                    @endif  
 
                 </div>
             </div>

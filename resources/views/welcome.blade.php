@@ -37,24 +37,43 @@
         </div>
     </nav>
 
-    <section class="relative pt-24 pb-20 lg:pt-32 lg:pb-28 overflow-hidden bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight mb-6">
-                Pemesanan Lapangan <span class="text-emerald-600 text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Lebih Mudah & Cepat</span>
-            </h1>
-            <p class="mt-4 max-w-2xl text-lg text-gray-500 mx-auto mb-10">
-                Sistem manajemen GOR modern. Cek ketersediaan jadwal secara langsung, lakukan pemesanan dalam hitungan detik, dan kelola aktivitas olahraga Anda tanpa hambatan.
-            </p>
-            <div class="flex justify-center gap-4">
-                <a href="#katalog-lapangan" class="px-8 py-3 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg transition duration-200">
-                    Lihat Lapangan
-                </a>
-                <a href="{{ route('login') }}" class="px-8 py-3 text-base font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition duration-200">
-                    Masuk ke Sistem
-                </a>
+    <section class="relative min-h-[85vh] flex items-center pt-16 overflow-hidden bg-slate-900">
+        
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/85 to-slate-950/40 md:to-transparent z-10"></div>
+            
+            <img src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=2070&auto=format&fit=crop" 
+                 alt="Pemain Badminton GOR" 
+                 class="w-full h-full object-cover object-center transform scale-105">
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 w-full py-20 lg:py-32">
+            <div class="max-w-2xl text-left">
+                <span class="inline-flex items-center bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-6">
+                    ⚡ GOR Modern & Profesional
+                </span>
+
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight mb-6">
+                    Pemesanan Lapangan <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                        Lebih Mudah & Cepat
+                    </span>
+                </h1>
+
+                <p class="text-slate-300 text-lg md:text-xl leading-relaxed mb-10 max-w-xl">
+                    Sistem manajemen GOR modern. Cek ketersediaan jadwal secara langsung, lakukan pemesanan dalam hitungan detik, dan kelola aktivitas olahraga Anda tanpa hambatan.
+                </p>
+
+                <div class="flex flex-wrap gap-4">
+                    <a href="#katalog-lapangan" class="px-8 py-4 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-lg shadow-emerald-950/50 transition transform hover:-translate-y-0.5 duration-150">
+                        Lihat Lapangan
+                    </a>
+                    <a href="{{ route('login') }}" class="px-8 py-4 text-base font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl backdrop-blur-md transition transform hover:-translate-y-0.5 duration-150">
+                        Masuk ke Sistem
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="absolute inset-y-0 w-full h-full bg-grid-slate-100/[0.04] bg-[bottom_1px_center] pointer-events-none" style="mask-image: linear-gradient(to bottom, transparent, black);"></div>
     </section>
 
     <section id="katalog-lapangan" class="py-20 bg-slate-50">
@@ -65,12 +84,9 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {{-- Pastikan variabel $lapangans dikirim dari Controller Anda --}}
                 @forelse ($lapangans as $lapangan)
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition duration-300 flex flex-col">
                     <div class="h-48 overflow-hidden">
-                        {{-- Kita asumsikan data nama lapangan di database adalah 'Lapangan A', 'Lapangan B', dst --}}
-                        {{-- Kita gunakan fungsi Str::slug untuk mengubah 'Lapangan A' menjadi 'court-a' --}}
                         <img src="{{ asset('images/courts/' . Str::slug($lapangan->nama_lapangan) . '.png') }}"
                             alt="Foto {{ $lapangan->nama_lapangan }}"
                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
